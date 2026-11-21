@@ -3,6 +3,8 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+permissions:
+  contents: write
 jobs:
   build:
     runs-on: macos-15
@@ -27,3 +29,10 @@ jobs:
         with:
           name: KontrolaOM-ipa
           path: KontrolaOM.ipa
+      - name: Zveřejnit .ipa ke stažení (Releases)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete latest --yes --cleanup-tag || true
+          gh release create latest KontrolaOM.ipa --title "Kontrola OM – poslední sestavení" \
+            --notes "Sestaveno z commitu ${GITHUB_SHA::7}. Nainstalujte přes Sideloadly (viz README)."

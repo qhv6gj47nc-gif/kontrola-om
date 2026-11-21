@@ -5,7 +5,8 @@ historie kontrol se ukládá v telefonu, protokol jde sdílet přes systémové 
 
 ## Jak se sestaví
 Mac není potřeba. Po každém nahrání do větve `main` sestaví GitHub Actions (macOS) soubor
-`KontrolaOM.ipa` (nepodepsaný). Stáhnete ho v repozitáři: **Actions → poslední běh „Sestavit IPA“ → Artifacts → KontrolaOM-ipa** (zip, uvnitř .ipa).
+`KontrolaOM.ipa` (nepodepsaný) a zveřejní ho v **Releases**:
+https://github.com/qhv6gj47nc-gif/kontrola-om/releases/latest/download/KontrolaOM.ipa
 
 ## Instalace do iPhonu z Windows (Sideloadly, zdarma)
 1. Nainstalujte **iTunes** a **iCloud** z webu Apple (ne verze z Microsoft Store).
