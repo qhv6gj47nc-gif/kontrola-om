@@ -1,0 +1,29 @@
+name: Sestavit IPA
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Nainstalovat XcodeGen
+        run: brew install xcodegen
+      - name: Vygenerovat Xcode projekt
+        run: xcodegen generate
+      - name: Sestavit (bez podpisu)
+        run: |
+          xcodebuild -project KontrolaOM.xcodeproj -scheme KontrolaOM \
+            -configuration Release -sdk iphoneos -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" build
+      - name: Zabalit do .ipa
+        run: |
+          mkdir -p Payload
+          cp -R build/Build/Products/Release-iphoneos/KontrolaOM.app Payload/
+          zip -qry KontrolaOM.ipa Payload
+      - uses: actions/upload-artifact@v4
+        with:
+          name: KontrolaOM-ipa
+          path: KontrolaOM.ipa

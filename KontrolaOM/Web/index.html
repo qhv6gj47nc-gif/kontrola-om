@@ -1,0 +1,419 @@
+<!doctype html><html lang="cs"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Kontrola OM">
+<link rel="apple-touch-icon" href="icon-180.png"><link rel="icon" href="icon-192.png">
+<style>:root{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}body{margin:0;font:14px system-ui}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Kontrola odběrného místa</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="theme-color" content="#1d4f73">
+
+
+
+<style>
+/* Layout: one-column field tool — sticky header with mode switch, stacked sections of checks, sticky verdict bar at the bottom */
+:root{
+  --bg:#eef1f3; --surface:#ffffff; --surface-2:#e3e8ec; --fg:#14202b; --muted:#5a6773; --line:#cfd7de;
+  --accent:#1d4f73; --accent-fg:#ffffff;
+  --ok:#1f7a45; --ok-bg:#dcf1e4; --bad:#b3261e; --bad-bg:#fbe1de; --warn:#9a5b00; --warn-bg:#fdeccc;
+  --f-display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f161c; --surface:#18222b; --surface-2:#22303b; --fg:#e6edf2; --muted:#9aa8b4; --line:#2e3d49;
+  --accent:#6fb1e0; --accent-fg:#0b1722;
+  --ok:#5fd08e; --ok-bg:#16301f; --bad:#ff8a80; --bad-bg:#3a1a18; --warn:#f2b85a; --warn-bg:#3a2a10; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#0f161c; --surface:#18222b; --surface-2:#22303b; --fg:#e6edf2; --muted:#9aa8b4; --line:#2e3d49;
+  --accent:#6fb1e0; --accent-fg:#0b1722;
+  --ok:#5fd08e; --ok-bg:#16301f; --bad:#ff8a80; --bad-bg:#3a1a18; --warn:#f2b85a; --warn-bg:#3a2a10; color-scheme:dark }
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:16px;line-height:1.45;padding-bottom:96px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--accent)}
+.wrap{max-width:720px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--accent);color:var(--accent-fg)}
+header.top .wrap{padding-block:10px 12px;display:flex;flex-direction:column;gap:10px}
+.brand{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.brand h1{margin:0;font-family:var(--f-display);font-size:1.45rem;letter-spacing:.02em;text-transform:uppercase}
+.brand small{font-family:var(--f-mono);font-size:.72rem;opacity:.8}
+.modes{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:rgba(0,0,0,.18);padding:4px;border-radius:10px}
+.modes button{appearance:none;border:0;border-radius:7px;padding:10px 8px;font:600 .95rem var(--f-body);color:inherit;background:transparent;cursor:pointer}
+.modes button[aria-pressed="true"]{background:var(--surface);color:var(--fg)}
+main{display:flex;flex-direction:column;gap:18px;padding-block:16px}
+h2{font-family:var(--f-display);font-size:1.15rem;text-transform:uppercase;letter-spacing:.06em;margin:0;color:var(--accent);text-wrap:balance}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:420px){.grid2{grid-template-columns:1fr}}
+label.f{display:flex;flex-direction:column;gap:5px;font-size:.82rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;min-width:0}
+input,select{font:500 1rem var(--f-body);color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:11px 10px;width:100%;min-height:46px}
+input:focus-visible,select:focus-visible,button:focus-visible,summary:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button{flex:1 1 auto;min-height:44px;padding:8px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font:600 .95rem var(--f-body);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+.hint{font-size:.85rem;color:var(--muted);margin:0}
+.banner{border-radius:10px;padding:10px 12px;font-size:.92rem;border:1px solid}
+.banner.warn{background:var(--warn-bg);color:var(--warn);border-color:var(--warn)}
+.banner.bad{background:var(--bad-bg);color:var(--bad);border-color:var(--bad)}
+.banner.info{background:var(--surface-2);color:var(--fg);border-color:var(--line)}
+.calc{font-family:var(--f-mono);font-size:.85rem;background:var(--surface-2);border-radius:8px;padding:8px 10px;display:flex;flex-direction:column;gap:3px}
+
+details.sec{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+details.sec>summary{list-style:none;cursor:pointer;padding:14px;display:flex;align-items:center;gap:10px}
+details.sec>summary::-webkit-details-marker{display:none}
+.sec-title{flex:1;min-width:0;font-family:var(--f-display);font-weight:700;font-size:1.1rem;letter-spacing:.03em;text-transform:uppercase}
+.sec-count{font-family:var(--f-mono);font-size:.78rem;padding:3px 8px;border-radius:99px;background:var(--surface-2);color:var(--muted);white-space:nowrap}
+.sec-count.bad{background:var(--bad-bg);color:var(--bad)}
+.sec-count.done{background:var(--ok-bg);color:var(--ok)}
+.chev{transition:transform .15s;color:var(--muted)}
+details[open] .chev{transform:rotate(90deg)}
+.items{display:flex;flex-direction:column;border-top:1px solid var(--line)}
+.item{padding:12px 14px;display:flex;flex-direction:column;gap:8px;border-bottom:1px solid var(--line);border-left:4px solid transparent}
+.item:last-child{border-bottom:0}
+.item.s-ok{border-left-color:var(--ok)} .item.s-fail{border-left-color:var(--bad)} .item.s-warn{border-left-color:var(--warn)}
+.item p{margin:0}
+.q{font-weight:600}
+.q .rec{font-weight:500;font-size:.75rem;color:var(--muted);border:1px solid var(--line);border-radius:4px;padding:0 5px;margin-left:6px;vertical-align:2px;text-transform:uppercase;letter-spacing:.05em}
+.d{font-size:.9rem;color:var(--muted)}
+.ref{font-family:var(--f-mono);font-size:.72rem;color:var(--muted)}
+.auto{font-family:var(--f-mono);font-size:.8rem;padding:6px 8px;border-radius:6px}
+.auto.ok{background:var(--ok-bg);color:var(--ok)} .auto.fail{background:var(--bad-bg);color:var(--bad)} .auto.warn{background:var(--warn-bg);color:var(--warn)}
+.ans{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.ans button{min-height:44px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font:600 .92rem var(--f-body);cursor:pointer}
+.ans button.a-ok[aria-pressed="true"]{background:var(--ok);border-color:var(--ok);color:var(--surface)}
+.ans button.a-fail[aria-pressed="true"]{background:var(--bad);border-color:var(--bad);color:var(--surface)}
+.ans button.a-na[aria-pressed="true"]{background:var(--muted);border-color:var(--muted);color:var(--surface)}
+
+.verdict{display:flex;flex-direction:column;gap:10px}
+.vbig{font-family:var(--f-display);font-size:1.9rem;line-height:1.05;text-transform:uppercase;letter-spacing:.02em;margin:0}
+.v-ok{color:var(--ok)} .v-bad{color:var(--bad)} .v-warn{color:var(--warn)} .v-open{color:var(--muted)}
+ul.faults{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
+ul.faults li .ref{display:block}
+.actions{display:flex;flex-wrap:wrap;gap:8px}
+.btn{min-height:46px;padding:10px 16px;border-radius:9px;border:1px solid var(--accent);background:var(--accent);color:var(--accent-fg);font:600 .95rem var(--f-body);cursor:pointer}
+.btn.ghost{background:transparent;color:var(--accent)}
+textarea{width:100%;min-height:160px;font:500 .8rem var(--f-mono);color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px}
+.hist{display:flex;flex-direction:column;gap:6px}
+.hist button{text-align:left;display:flex;justify-content:space-between;gap:10px;padding:10px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);color:var(--fg);font:500 .9rem var(--f-body);cursor:pointer}
+.hist .tag{font-family:var(--f-mono);font-size:.75rem;white-space:nowrap}
+.docs a{color:var(--accent)}
+.docs li{margin-bottom:4px}
+
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
+.bar .wrap{display:flex;align-items:center;gap:12px;padding-block:10px}
+.pill{font-family:var(--f-display);font-weight:700;font-size:1rem;text-transform:uppercase;letter-spacing:.04em;padding:8px 12px;border-radius:8px;white-space:nowrap}
+.pill.ok{background:var(--ok-bg);color:var(--ok)} .pill.bad{background:var(--bad-bg);color:var(--bad)} .pill.warn{background:var(--warn-bg);color:var(--warn)} .pill.open{background:var(--surface-2);color:var(--muted)}
+.bar .stat{flex:1;min-width:0;font-family:var(--f-mono);font-size:.8rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar .btn{min-height:40px;padding:8px 14px}
+footer{font-size:.8rem;color:var(--muted);padding-block:8px 24px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<header class="top"><div class="wrap">
+  <div class="brand"><h1>Kontrola OM</h1><small>PP nn · platnost od 1. 9. 2025</small></div>
+  <div class="modes" role="group" aria-label="Typ zakázky">
+    <button id="m-montaz" data-mode="montaz" aria-pressed="true">Montáž / výměna EM</button>
+    <button id="m-sazba" data-mode="sazba" aria-pressed="false">Změna sazby</button>
+  </div>
+</div></header>
+
+<main class="wrap">
+  <section class="card" aria-labelledby="h-om">
+    <h2 id="h-om">Odběrné místo</h2>
+    <div class="grid2">
+      <label class="f">EAN / číslo OM<input id="ean" inputmode="numeric" placeholder="859182400…"></label>
+      <label class="f">Adresa<input id="adresa" placeholder="Ulice č.p., obec"></label>
+    </div>
+    <div class="grid2">
+      <div class="f"><label class="f" for="faze-1" style="pointer-events:none">Počet fází</label>
+        <div class="seg" id="faze"><button id="faze-1" data-v="1">1f</button><button id="faze-3" data-v="3">3f</button></div></div>
+      <div class="f"><span class="f" style="font-size:.82rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">Charakteristika HJ</span>
+        <div class="seg" id="char"><button id="char-B" data-v="B">B</button><button id="char-C" data-v="C">C</button><button id="char-D" data-v="D">D</button></div></div>
+    </div>
+    <div class="grid2">
+      <label class="f">Hlavní jistič před EM (A)<input id="jistic" type="number" inputmode="numeric" min="1" step="1"></label>
+    </div>
+    <div class="grid2">
+      <label class="f">Typ objektu<select id="objekt">
+        <option value="rd">Rodinný dům</option><option value="bd">Bytový dům</option><option value="chata">Chata / garáž (kolonie)</option><option value="jine">Jiné (nebytové)</option></select></label>
+      <label class="f">Umístění ER<select id="umisteni">
+        <option value="vnitrni">Vnitřní</option><option value="venkovni">Venkovní</option><option value="komunikace">Venkovní u komunikace</option></select></label>
+    </div>
+    <div class="grid2">
+      <label class="f">Rozváděč vyroben<select id="erRok"><option value="stary">do 31. 12. 2025</option><option value="novy">od 1. 1. 2026</option></select></label>
+    </div>
+    <div class="grid2">
+      <label class="f">Rozsah zásahu<select id="zasah"><option value="vymena">Výměna EM ve stávajícím OM</option><option value="nove">Nové nebo rekonstruované OM</option></select></label>
+      <label class="f">Výrobna / FVE / baterie<select id="vyroba"><option value="ne">Ne</option><option value="ano">Ano</option></select></label>
+    </div>
+    <div class="grid2" id="vyroba-box" hidden>
+      <label class="f">Instalovaný výkon (kW)<input id="vyrKw" type="number" inputmode="decimal" step="0.1"></label>
+      <label class="f">Max. AC proud na fázi (A)<input id="vyrA" type="number" inputmode="decimal" step="0.1"></label>
+    </div>
+    <div id="sazba-box" class="grid2" hidden>
+      <label class="f">Současná sazba<select id="sazbaZ"></select></label>
+      <label class="f">Požadovaná sazba<select id="sazbaNa"></select></label>
+    </div>
+    <div id="calc" class="calc" aria-live="polite"></div>
+    <div id="banners" style="display:flex;flex-direction:column;gap:8px"></div>
+  </section>
+
+  <div id="sections" style="display:flex;flex-direction:column;gap:12px"></div>
+
+  <section class="card verdict" id="vysledek" aria-labelledby="h-v">
+    <h2 id="h-v">Výsledek</h2>
+    <p class="vbig" id="vbig"></p>
+    <p class="hint" id="vsub"></p>
+    <ul class="faults" id="faults"></ul>
+    <div class="actions">
+      <button class="btn" id="b-copy">Sdílet protokol</button>
+      <button class="btn ghost" id="b-save">Uložit do historie</button>
+      <button class="btn ghost" id="b-new">Nová kontrola</button>
+    </div>
+    <p class="hint" id="copy-msg" aria-live="polite"></p>
+    <textarea id="proto" readonly hidden aria-label="Text protokolu"></textarea>
+  </section>
+
+  <section class="card" aria-labelledby="h-h">
+    <h2 id="h-h">Historie v tomto zařízení</h2>
+    <div class="hist" id="hist"></div>
+  </section>
+
+  <section class="card docs" aria-labelledby="h-d">
+    <h2 id="h-d">Zdrojové dokumenty</h2>
+    <ul style="margin:0;padding-left:18px">
+      <li><a href="https://www.cezdistribuce.cz/file/edee/distribuce/ppnn/2026/pripojovaci_podminky_nn.pdf" target="_blank" rel="noopener">Připojovací podmínky nn (PP nn)</a></li>
+      <li><a href="https://www.cezdistribuce.cz/file/edee/distribuce/ppnn/2026/vp_b_pripojovaci_podminky.pdf" target="_blank" rel="noopener">VP_B Doplňující technické informace ke schématům</a></li>
+      <li><a href="https://www.cezdistribuce.cz/file/edee/distribuce/ppnn/20250901/vp_a-tabulka-zavaznosti-dle-nejcastejsich-cinnosti.xlsx" target="_blank" rel="noopener">VP_A Tabulka závaznosti dle činností (XLSX)</a></li>
+      <li><a href="https://www.cezdistribuce.cz/file/edee/distribuce/ppnn/2026/schema_1.pdf" target="_blank" rel="noopener">Schéma 1: jednotarifový EM</a> · <a href="https://www.cezdistribuce.cz/file/edee/distribuce/ppnn/2026/schema_2.pdf" target="_blank" rel="noopener">Schéma 2: dvoutarifový EM / výrobna</a></li>
+      <li><a href="https://www.cezdistribuce.cz/file/edee/distribuce/ppnn/20250901/vp_03-stavy-povelovych-rele-prijimace-hdo.pdf" target="_blank" rel="noopener">VP_03 Stavy povelových relé přijímače HDO</a></li>
+      <li><a href="https://www.cezdistribuce.cz/cs/pro-zakazniky/potrebuji-vyresit/ceny-a-podminky/pripojovaci-podminky/pripojovaci-podminky-nn" target="_blank" rel="noopener">Stránka připojovacích podmínek nn</a></li>
+    </ul>
+    <p class="hint">Pomůcka nenahrazuje PP nn ani cenové rozhodnutí ERÚ. Podmínky nároku na sazbu ověřte v aktuálním cenovém rozhodnutí. Nepřímé měření (nad 80 A), část 3.6–3.9 a kapitola 4 (výrobny) jsou zatím pokryty jen orientačně.</p>
+  </section>
+  <footer>Prototyp pro montéry · data se ukládají jen v tomto zařízení</footer>
+</main>
+
+<div class="bar"><div class="wrap">
+  <span class="pill open" id="pill">Rozpracováno</span>
+  <span class="stat" id="stat"></span>
+  <button class="btn" id="b-go">Výsledek</button>
+</div></div>
+
+<script>
+(function(){
+const SER_J=[6,10,13,16,20,25,32,40,50,63,80,100,125,160,200,250,300,315,320,400,500,630,800,1000];
+const SER_P=[6,10,16,20,25,32,35,40,50,63,80,100,125,160,200,250,315,400,500,630];
+const nextAbove=(ser,v,steps)=>{const i=ser.findIndex(x=>x>v);if(i<0)return null;return ser[Math.min(i+steps-1,ser.length-1)]};
+const TAR={
+  D01d:{n:"D01d – jednotarifová (malá spotřeba)",two:false},
+  D02d:{n:"D02d – jednotarifová",two:false},
+  D25d:{n:"D25d – akumulační ohřev vody (NT 8 h)",two:true,blok:["TUV"],cond:"Akumulační ohřev teplé vody s blokováním ohřívače."},
+  D26d:{n:"D26d – akumulační vytápění (NT 8 h)",two:true,blok:["AKU","TUV"],cond:"Akumulační (příp. hybridní) elektrické vytápění s blokováním."},
+  D27d:{n:"D27d – nabíjení elektromobilu (NT 8 h)",two:true,blok:["EMO"],cond:"Nabíjecí stanice elektromobilu s blokováním nabíjení."},
+  D35d:{n:"D35d – hybridní vytápění (NT 16 h)",two:true,blok:["PV"],cond:"Hybridní vytápění (el. zdroj v kombinaci s jiným zdrojem) s blokováním."},
+  D45d:{n:"D45d – přímotopné vytápění (NT 20 h)",two:true,blok:["PV","TUV"],cond:"Přímotopné elektrické vytápění s blokováním."},
+  D56d:{n:"D56d – vytápění tepelným čerpadlem (NT 22 h)",two:true,blok:["PV"],tc:true,cond:"Vytápění tepelným čerpadlem. Kompresor TČ blokován být nemusí, vodič ATC je volitelný."},
+  D57d:{n:"D57d – tepelné čerpadlo (NT 20 h)",two:true,blok:["PV"],tc:true,cond:"Vytápění tepelným čerpadlem. Kompresor TČ blokován být nemusí, vodič ATC je volitelný."},
+  D61d:{n:"D61d – víkendová (rekreační objekty)",two:true,blok:[],cond:"Víkendový režim pro rekreační objekty."}
+};
+const S={mode:"montaz",faze:"3",char:"B",jistic:25,predj:32,objekt:"rd",umisteni:"venkovni",vyska:1300,erRok:"stary",zasah:"vymena",vyroba:"ne",vyrKw:"",vyrA:"",sazbaZ:"D02d",sazbaNa:"D25d",ean:"",adresa:"",ans:{}};
+const two=()=>S.mode==="sazba"&&TAR[S.sazbaNa]&&TAR[S.sazbaNa].two;
+const tarOk=()=>S.mode==="sazba";
+const j=()=>Number(S.jistic)||0;
+
+/* ---------- checks ---------- */
+const SECS=[
+ {id:"pristup",t:"Umístění a přístup k ER",items:[
+  {id:"p1",q:"ER je trvale přístupný pracovníkům PDS",ref:"PP nn 3.1"},
+  {id:"p2",q:"Před ER volný prostor min. 800 mm do hloubky i šířky, rovná plocha",ref:"PP nn 3.1"},
+  {id:"p3",q:"Dvířka lze otevřít min. o 90°",ref:"PP nn 3.1"},
+  {id:"p5",q:"ER je na hranici pozemku nebo na obvodové zdi, dvířka z veřejně přístupné strany",when:()=>S.objekt==="rd"&&S.zasah==="nove",ref:"PP nn 3.1"},
+  {id:"p6",q:"ER je na chodbě, podestě nebo v energocentru",when:()=>S.objekt==="bd"&&S.zasah==="nove",ref:"PP nn 3.1"},
+  {id:"p7",q:"Společný ER u místa připojení, přístupný z veřejného prostranství",when:()=>S.objekt==="chata"&&S.zasah==="nove",ref:"PP nn 3.1"},
+ ]},
+ {id:"konstr",t:"Konstrukce rozváděče",items:[
+  {id:"k1",q:"Typově zkoušený ER s prohlášením o shodě a značkou CE, zkratová odolnost min. 10 kA",ref:"PP nn 3.2.1"},
+  {id:"k2",q:"Krytí odpovídá umístění",d:()=>"Otevřené dveře min. IP20. Zavřené: "+({vnitrni:"IP 2XC (vnitřní)",venkovni:"IP 43 (venkovní)",komunikace:"IP 44 (venkovní u komunikace)"})[S.umisteni]+".",ref:"PP nn 3.2.1"},
+  {id:"k3",q:"Přístrojová deska není dřevěná, pertinaxová ani gumonová",d:"Takovou desku je nutné vyměnit.",ref:"PP nn 3.2.1"},
+  {id:"k4",q:"Bez snímatelných krytů (masek), bez lepeného plexiskla a fólie",d:"Masky jen u stávajícího společného ER s fakturačním EM nebo u dočasného ER. Okénka min. 160×120 mm (3f) / 100×100 mm (1f).",ref:"PP nn 3.2.1"},
+  {id:"k7",q:"Kabelový prostor oddělen pevnou nebo plombovatelnou přepážkou",ref:"PP nn 3.2.2"},
+  {id:"k9",q:"Více OM v jednom ER: označení a schéma zapojení",when:()=>S.objekt==="bd"||S.objekt==="chata",ref:"PP nn 3.2.1"}
+ ]},
+ {id:"vysky",t:"Prostor pro přístroje",items:[
+  {id:"v4",q:"Spodní hrana venkovního ER min. 600 mm nad terénem",when:()=>S.umisteni!=="vnitrni",ref:"PP nn tab. 1"},
+  {id:"v5",q:()=>"Volný prostor pro elektroměr min. "+(S.faze==="1"&&S.erRok==="stary"?"180×300×160 mm":"200×400×160 mm")+" (š×v×h)",d:()=>S.faze==="1"?"Jednofázový EM: ER do 31. 12. 2025 min. 180×300×160, od 1. 1. 2026 min. 200×400×160.":"Třífázový EM.",ref:"PP nn tab. 2"},
+  {id:"v6",q:"Prostor pro spínací prvek / komunikační jednotku min. 180×300×160 mm",ref:"PP nn tab. 2"},
+ ]},
+ {id:"hj",t:"Hlavní jistič před elektroměrem",items:[
+  {id:"j1",q:"Jmenovitý proud v řadě PDS",autoOnly:true,auto:()=>{if(!j())return null;return SER_J.includes(j())?["ok",j()+" A je v normalizované řadě"]:["fail",j()+" A není v řadě "+SER_J.slice(0,11).join(", ")+" …"]},ref:"PP nn 3.4.1"},
+  {id:"j2",q:"Jednofázový jistič max. 25 A",autoOnly:true,when:()=>S.faze==="1",auto:()=>{if(!j())return null;return j()<=25?["ok","1f, "+j()+" A ≤ 25 A"]:["fail","1f s jističem "+j()+" A nelze, max. 25 A, nutné 3f připojení"]},ref:"PP nn 3.4.1"},
+  {id:"j3",q:"Přímé měření (jistič do 80 A včetně)",autoOnly:true,auto:()=>{if(!j())return null;return j()<=80?["ok","Přímé měření"]:["fail","Nad 80 A nepřímé měření s MTP, řešit dle PP nn 3.6 a schémat 4/5"]},ref:"PP nn 3.5.1"},
+  {id:"j4",q:"Charakteristika B",autoOnly:true,auto:()=>S.char==="B"?["ok","Charakteristika B"]:["warn","Charakteristika "+S.char+" jen s kladným stanoviskem PDS"],ref:"PP nn 3.4.1"},
+  {id:"j5",q:()=>"Doloženo kladné stanovisko PDS k charakteristice "+S.char,when:()=>S.char!=="B",ref:"PP nn 3.4.1"},
+  {id:"j6",q:()=>"Počet pólů jističe odpovídá počtu fází ("+S.faze+"f), 3p jistič bez možnosti ovládat póly samostatně",ref:"PP nn 3.4.1"},
+  {id:"j7",q:"Zkratová odolnost min. 10 kA, hodnota, charakteristika a vypínací schopnost zřetelně a nezáměnně označeny",ref:"PP nn 3.4.1"},
+  {id:"j8",q:"Jistič bez dálkového ovládání a bez signalizačního kontaktu",ref:"PP nn 3.4.1"},
+  {id:"j9",q:"Montáž svisle, páčka nahoru = zapnuto, jistič plombovatelný",ref:"PP nn 3.4.1"},
+  {id:"j10",q:"Hodnota jističe odpovídá rezervovanému příkonu ve smlouvě / žádosti",ref:"PP nn 1.2, 3.4.1"}
+ ]},
+ {id:"vodice",t:"Vodiče a zapojení",items:[
+  {id:"w1",q:"Vodiče do 6 mm² Cu plné, 10 a 16 mm² Cu plné nebo lanované",d:"Na pohyblivém panelu nebo dveřích vždy lanovaný Cu.",ref:"PP nn 3.4.2"},
+  {id:"w2",q:"Lanovaná zakončení s lisovanými dutinkami (ne cínovaná), silové dutinky s izolačním límcem min. 18 mm",ref:"PP nn 3.4.2"},
+  {id:"w4",q:"Přívodní a vývodní fázové vodiče měřeného OM mají stejný průřez",ref:"PP nn 3.5.2"},
+  {id:"w5",q:"Správný sled fází L1, L2, L3",when:()=>S.faze==="3",ref:"PP nn 3.2"},
+  {id:"w6",q:"Barvy vodičů: L1 hnědá, L2 černá, L3 šedá, N světle modrá, PEN zelenožlutá",ref:"VP_01 schéma 1/2"},
+  {id:"w8",q:"Stávající Al vývod jen od vypínače instalace nebo vývodové svorkovnice",rec:true,ref:"PP nn 3.4.2"},
+ ]},
+ {id:"vyp",t:"Vypínač instalace",when:()=>S.zasah==="nove",items:[
+  {id:"x1",q:"Za elektroměrem je vypínač instalace, který galvanicky odpojí instalaci zákazníka",ref:"PP nn 3.4.3"},
+  {id:"x2",q:()=>"Jmenovitý proud vypínače min. "+(j()||"–")+" A (hodnota HJ), označení „Vypínač instalace“",ref:"PP nn 3.4.3"},
+  {id:"x3",q:"Mezi EM a vypínačem není žádný přístroj zákazníka, páčka svisle nahoru = zapnuto",ref:"PP nn 3.4.3"}
+ ]},
+ {id:"sazba",t:"Tarif, HDO a blokování",when:()=>two()||S.vyroba==="ano",items:[
+  {id:"t0",q:"Nárok na sazbu",autoOnly:true,when:()=>two(),auto:()=>["warn",TAR[S.sazbaNa].cond+" Ověřte v cenovém rozhodnutí ERÚ."],ref:"Cenové rozhodnutí ERÚ"},
+  {id:"t1",q:"Spotřebiče pro sazbu jsou instalované a zapojené přes blokovací stykač",when:()=>two()&&TAR[S.sazbaNa].blok.length>0,d:()=>"Požadované blokované okruhy: "+TAR[S.sazbaNa].blok.join(", ")+(TAR[S.sazbaNa].tc?". Kompresor TČ blokován být nemusí.":"."),ref:"VP_B, ERÚ"},
+  {id:"t2",q:"Samostatný spínací prvek (HDO přijímač, spínací hodiny nebo ŘJ) pro toto OM",d:"Společné ovládání blokování pro více OM je při změně sazby nutné rozdělit.",when:()=>two(),ref:"VP_B, PP nn 3.4"},
+  {id:"t3",q:"Jistič spínacího prvku 2–6 A, char. B nebo C, min. 10 kA, svisle",ref:"PP nn 3.4.1"},
+  {id:"t4",q:"Tarif ani blokování nejsou ovládány ze spínacího prvku v jiném ER",ref:"PP nn 3.4"},
+  {id:"t6",q:"AKU a TUV mají dva samostatné stykače",when:()=>two()&&TAR[S.sazbaNa].blok.includes("AKU"),ref:"VP_B"},
+  {id:"t8",q:()=>"Vodiče označeny dle tab. 3 PP nn: TAR"+(two()?", "+TAR[S.sazbaNa].blok.join(", "):"")+(S.vyroba==="ano"?", N 0 %":""),ref:"PP nn tab. 3"},
+  {id:"t9",q:"Výrobna s omezováním výkonu zapojena dle schématu 2 (vodič N 0 %)",when:()=>S.vyroba==="ano",ref:"VP_01 schéma 2"}
+ ]},
+ {id:"vyrsec",t:"Výrobna / akumulace",when:()=>S.vyroba==="ano",items:[
+  {id:"y1",q:"Režim připojení výrobny",autoOnly:true,auto:()=>{const kw=Number(S.vyrKw),a=Number(S.vyrA);if(!kw||!a)return null;
+     return(kw<=10.8&&a<=16)?["ok","Mikrozdroj ("+kw+" kW, "+a+" A/f), zjednodušené připojení"]:["warn",kw+" kW / "+a+" A/f nad limit mikrozdroje (10,8 kW, 16 A/f), nutná smlouva o připojení dle kap. 4"]},ref:"PP nn 1.2"},
+  {id:"y2",q:"Doloženo oznámení / smlouva o připojení výrobny",ref:"PP nn 1.2, kap. 4"},
+  {id:"y3",q:"TOTAL/CENTRAL STOP: mechanický, uzamykatelný, označený vypínač, tlačítka ne na dvířkách ER",rec:true,ref:"PP nn 2.6"}
+ ]}
+];
+
+/* ---------- evaluation ---------- */
+const val=(x)=>typeof x==="function"?x():x;
+function visibleItems(){
+  const out=[];
+  SECS.forEach(sec=>{ if(sec.when&&!sec.when())return;
+    const its=sec.items.filter(it=>!it.when||it.when());
+    if(its.length) out.push({sec,its}); });
+  return out;
+}
+function status(it){
+  if(it.auto){const r=it.auto(); if(r){ if(it.autoOnly) return {s:r[0],m:r[1],auto:true}; }}
+  const a=S.ans[it.id];
+  if(a==="ok")return{s:"ok"}; if(a==="fail")return{s:it.rec?"warn":"fail"}; if(a==="na")return{s:"na"};
+  return{s:null};
+}
+function evaluate(){
+  let fails=[],warns=[],open=0,total=0,done=0;
+  visibleItems().forEach(({sec,its})=>its.forEach(it=>{total++;const r=status(it);
+    if(r.s===null){ if(!it.rec)open++; return;} done++;
+    if(r.s==="fail")fails.push({it,sec,m:r.m}); if(r.s==="warn")warns.push({it,sec,m:r.m});}));
+  let v;
+  if(fails.length) v={k:"bad",t:S.mode==="montaz"?"Nepřipraveno k montáži":"Nepřipraveno ke změně sazby"};
+  else if(open) v={k:"open",t:"Rozpracováno"};
+  else if(warns.length) v={k:"warn",t:"Připraveno s výhradou"};
+  else v={k:"ok",t:S.mode==="montaz"?"Připraveno k montáži":"Připraveno ke změně sazby"};
+  return {v,fails,warns,open,total,done};
+}
+
+/* ---------- render ---------- */
+const $=(id)=>document.getElementById(id);
+const esc=(s)=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]);
+const openSecs=new Set(["pristup"]);
+function renderSections(){
+  const box=$("sections"); box.innerHTML="";
+  visibleItems().forEach(({sec,its})=>{
+    let f=0,d=0,req=0; its.forEach(it=>{const r=status(it); if(r.s!==null)d++; if(r.s==="fail")f++; });
+    const det=document.createElement("details"); det.className="sec"; det.id="sec-"+sec.id; if(openSecs.has(sec.id))det.open=true;
+    det.addEventListener("toggle",()=>{det.open?openSecs.add(sec.id):openSecs.delete(sec.id)});
+    const cls=f?"bad":(d===its.length?"done":"");
+    det.innerHTML='<summary><span class="sec-title">'+esc(sec.t)+'</span><span class="sec-count '+cls+'">'+(f?f+" závad · ":"")+d+"/"+its.length+'</span><svg class="chev" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="2"/></svg></summary>';
+    const list=document.createElement("div"); list.className="items";
+    its.forEach(it=>{
+      const r=status(it); const el=document.createElement("div");
+      el.className="item"+(r.s?" s-"+(r.s==="na"?"na":r.s):"");
+      let h='<p class="q">'+esc(val(it.q))+(it.rec?'<span class="rec">doporučeno</span>':"")+'</p>';
+      if(it.d)h+='<p class="d">'+esc(val(it.d))+'</p>';
+      if(it.autoOnly){ h+= r.s? '<div class="auto '+r.s+'">'+esc(r.m)+'</div>' : '<div class="auto" style="background:var(--surface-2);color:var(--muted)">Doplňte údaje nahoře</div>'; }
+      else{ const a=S.ans[it.id]||"";
+        h+='<div class="ans" role="group" aria-label="Odpověď"><button class="a-ok" data-id="'+it.id+'" data-a="ok" aria-pressed="'+(a==="ok")+'">Vyhovuje</button><button class="a-fail" data-id="'+it.id+'" data-a="fail" aria-pressed="'+(a==="fail")+'">Závada</button><button class="a-na" data-id="'+it.id+'" data-a="na" aria-pressed="'+(a==="na")+'">Netýká se</button></div>'; }
+      h+='<span class="ref">'+esc(it.ref)+'</span>';
+      el.innerHTML=h; list.appendChild(el);
+    });
+    det.appendChild(list); box.appendChild(det);
+  });
+}
+function renderTop(){
+  document.querySelectorAll(".modes button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.mode===S.mode));
+  document.querySelectorAll("#faze button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.v===S.faze));
+  document.querySelectorAll("#char button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.v===S.char));
+  $("sazba-box").hidden=S.mode!=="sazba"; $("vyroba-box").hidden=S.vyroba!=="ano";
+  const c=[]; if(j()){c.push("Rezervovaný příkon: "+S.faze+"×"+j()+" A ≈ "+(S.faze==="3"?(j()*0.4*Math.sqrt(3)).toFixed(1):(j()*0.23).toFixed(1))+" kW")}
+  $("calc").innerHTML=c.map(esc).join("<br>"); $("calc").hidden=!c.length;
+  const b=[]; if(j()>80)b.push(["bad","Jistič nad 80 A: OM vyžaduje nepřímé měření s MTP. Tato pomůcka ho zatím nepokrývá."]);
+  if(S.mode==="sazba"&&S.sazbaZ===S.sazbaNa)b.push(["warn","Současná a požadovaná sazba jsou stejné."]);
+  if(S.mode==="sazba"&&TAR[S.sazbaZ]&&!TAR[S.sazbaZ].two&&two())b.push(["info","Přechod z jednotarifu na dvoutarif: je nutný spínací prvek, blokování a dvoutarifový EM."]);
+  $("banners").innerHTML=b.map(x=>'<div class="banner '+x[0]+'">'+esc(x[1])+'</div>').join("");
+}
+function renderVerdict(){
+  const e=evaluate();
+  $("vbig").className="vbig v-"+e.v.k; $("vbig").textContent=e.v.t;
+  $("vsub").textContent=e.open?("Zbývá vyplnit "+e.open+" povinných bodů z "+e.total+"."):("Zkontrolováno "+e.done+" z "+e.total+" bodů.");
+  $("faults").innerHTML=[...e.fails.map(x=>["Závada",x]),...e.warns.map(x=>["Výhrada",x])].map(([k,x])=>'<li><strong>'+k+':</strong> '+esc(val(x.it.q))+(x.m?" – "+esc(x.m):"")+'<span class="ref">'+esc(x.it.ref)+'</span></li>').join("");
+  const p=$("pill"); p.className="pill "+e.v.k; p.textContent=e.v.k==="bad"?"Nepřipraveno":e.v.k==="ok"?"Připraveno":e.v.k==="warn"?"S výhradou":"Rozpracováno";
+  $("stat").textContent=e.done+"/"+e.total+" bodů · "+e.fails.length+" závad · "+e.warns.length+" výhrad";
+  return e;
+}
+function renderAll(){renderTop();renderSections();renderVerdict();persist();}
+
+/* ---------- protocol, history ---------- */
+function protocol(){
+  const e=evaluate(); const d=new Date();
+  const L=["PROTOKOL KONTROLY ODBĚRNÉHO MÍSTA","Datum: "+d.toLocaleString("cs-CZ"),"Zakázka: "+(S.mode==="montaz"?"Montáž / výměna elektroměru":"Změna sazby "+S.sazbaZ+" → "+S.sazbaNa),
+   "EAN: "+(S.ean||"–"),"Adresa: "+(S.adresa||"–"),"Jistič: "+S.faze+"×"+(j()||"–")+" A, char. "+S.char,
+   "","VÝSLEDEK: "+e.v.t.toUpperCase()];
+  if(e.fails.length){L.push("","Závady:");e.fails.forEach(x=>L.push(" - "+val(x.it.q)+(x.m?" ("+x.m+")":"")+" ["+x.it.ref+"]"));}
+  if(e.warns.length){L.push("","Výhrady:");e.warns.forEach(x=>L.push(" - "+val(x.it.q)+(x.m?" ("+x.m+")":"")+" ["+x.it.ref+"]"));}
+  if(e.open)L.push("","Nevyplněno: "+e.open+" povinných bodů");
+  L.push("","Podklad: Připojovací podmínky nn ČEZ Distribuce (platnost od 1. 9. 2025), VP_B.");
+  return L.join("\n");
+}
+const LS="kontrola-om-v1";
+function store(){try{return JSON.parse(localStorage.getItem(LS)||"{}")}catch(_){return{}}}
+function storeSet(o){try{localStorage.setItem(LS,JSON.stringify(o))}catch(_){}}
+function persist(){const o=store();o.cur=S;storeSet(o);}
+function renderHist(){const h=(store().hist||[]);const box=$("hist");
+  if(!h.length){box.innerHTML='<p class="hint">Zatím žádné uložené kontroly. Po dokončení klepněte na „Uložit do historie“.</p>';return;}
+  box.innerHTML=h.map((x,i)=>'<button data-i="'+i+'"><span>'+esc((x.s.adresa||x.s.ean||"Bez označení"))+'<br><span class="hint">'+esc(x.d)+'</span></span><span class="tag">'+esc(x.v)+'</span></button>').join("");}
+
+/* ---------- events ---------- */
+function bindInputs(){
+  ["ean","adresa","jistic","objekt","umisteni","erRok","zasah","vyroba","vyrKw","vyrA","sazbaZ","sazbaNa"].forEach(id=>{
+    const el=$(id); el.value=S[id]; el.addEventListener(el.tagName==="SELECT"?"change":"input",()=>{S[id]=el.value;renderAll();});
+  });
+}
+function fillTariffs(){const o=Object.entries(TAR).map(([k,t])=>'<option value="'+k+'">'+esc(t.n)+'</option>').join("");$("sazbaZ").innerHTML=o;$("sazbaNa").innerHTML=o;}
+document.addEventListener("click",ev=>{
+  const b=ev.target.closest("button"); if(!b)return;
+  if(b.dataset.mode){S.mode=b.dataset.mode;renderAll();return;}
+  if(b.parentElement.id==="faze"){S.faze=b.dataset.v;renderAll();return;}
+  if(b.parentElement.id==="char"){S.char=b.dataset.v;renderAll();return;}
+  if(b.dataset.id){const id=b.dataset.id;S.ans[id]=S.ans[id]===b.dataset.a?undefined:b.dataset.a;const y=window.scrollY;renderAll();window.scrollTo(0,y);return;}
+  if(b.id==="b-go"){$("vysledek").scrollIntoView({behavior:"smooth"});return;}
+  if(b.id==="b-copy"){const t=protocol();if(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.share){window.webkit.messageHandlers.share.postMessage(t);return;}const ta=$("proto");ta.value=t;ta.hidden=false;
+    const done=()=>{$("copy-msg").textContent="Protokol zkopírován do schránky."};
+    const fb=()=>{ta.focus();ta.select();$("copy-msg").textContent="Text je označený, zkopírujte ho ručně.";};
+    try{navigator.clipboard.writeText(t).then(done,fb)}catch(_){fb()} return;}
+  if(b.id==="b-save"){const o=store();o.hist=[{d:new Date().toLocaleString("cs-CZ"),v:evaluate().v.t,s:JSON.parse(JSON.stringify(S))},...(o.hist||[])].slice(0,30);storeSet(o);renderHist();$("copy-msg").textContent="Uloženo do historie v tomto zařízení.";return;}
+  if(b.id==="b-new"){Object.assign(S,{ean:"",adresa:"",ans:{}});bindValues();renderAll();window.scrollTo(0,0);return;}
+  if(b.dataset.i!==undefined&&b.closest("#hist")){const x=(store().hist||[])[+b.dataset.i];if(x){Object.assign(S,JSON.parse(JSON.stringify(x.s)));bindValues();renderAll();window.scrollTo(0,0);}return;}
+});
+function bindValues(){["ean","adresa","jistic","objekt","umisteni","erRok","zasah","vyroba","vyrKw","vyrA","sazbaZ","sazbaNa"].forEach(id=>{$(id).value=S[id]??"";});}
+
+/* ---------- boot ---------- */
+fillTariffs();
+const saved=store().cur; if(saved&&typeof saved==="object")Object.assign(S,saved);
+else{ /* ukázkový stav: rozpracovaná kontrola */ S.ans={p1:"ok",p2:"ok",p3:"fail"}; S.adresa="Ukázka – Lipová 12, Kolín"; }
+bindInputs(); renderAll(); renderHist();
+})();
+</script>
+</body></html>
