@@ -21,7 +21,7 @@ struct WebView: UIViewRepresentable {
     func makeUIView(context: Context) -> WKWebView {
         let config = WKWebViewConfiguration()
         config.websiteDataStore = .default()          // trvalé localStorage
-        for name in ["share", "setKey", "hasKey", "photo"] {
+        for name in ["share", "setKey", "hasKey", "photo", "newCheck"] {
             config.userContentController.add(context.coordinator, name: name)
         }
         let web = WKWebView(frame: .zero, configuration: config)
@@ -74,10 +74,21 @@ struct WebView: UIViewRepresentable {
         func userContentController(_ uc: WKUserContentController, didReceive message: WKScriptMessage) {
             switch message.name {
             case "share":
-                guard let text = message.body as? String, let root = rootVC else { return }
-                let vc = UIActivityViewController(activityItems: [text], applicationActivities: nil)
+                guard let root = rootVC else { return }
+                var items: [Any] = []
+                if let body = message.body as? [String: Any], let text = body["text"] as? String {
+                    let name = body["name"] as? String ?? "Kontrola"
+                    if let out = try? ProtocolExport.export(text: text, name: name) {
+                        items = [out.pdf]
+                        callJS("onExported", "Protokoly/" + out.folder.lastPathComponent)
+                    } else { items = [text] }
+                } else if let text = message.body as? String { items = [text] }
+                let vc = UIActivityViewController(activityItems: items, applicationActivities: nil)
                 vc.popoverPresentationController?.sourceView = root.view
                 root.present(vc, animated: true)
+
+            case "newCheck":
+                ProtocolExport.clearCurrent()
 
             case "setKey":
                 KeyStore.save((message.body as? String ?? "").trimmingCharacters(in: .whitespacesAndNewlines))
@@ -113,6 +124,7 @@ struct WebView: UIViewRepresentable {
                 callJS("onPhotoError", "Fotku se nepodařilo načíst.")
                 return
             }
+            ProtocolExport.savePhoto(image)
             if let thumb = PhotoAnalyzer.jpegBase64(image) { callJS("onPhotoTaken", thumb) }
             Task {
                 do {
