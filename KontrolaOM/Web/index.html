@@ -247,6 +247,7 @@ footer{font-size:.78rem;color:var(--muted);padding-block:4px 24px;text-align:cen
       <label class="f">Současná sazba<select id="sazbaZ"></select></label>
       <label class="f">Požadovaná sazba<select id="sazbaNa"></select></label>
       <label class="f">Změna počtu fází<select id="fzm"><option value="">Beze změny</option><option value="f13">Současně z 1F na 3F</option><option value="f31">Současně z 3F na 1F</option></select></label>
+      <label class="f">Společný ER pro více elektroměrů<select id="spol"><option value="">Ne</option><option value="ano">Ano, některé EM jsou již osazeny</option></select></label>
     </div>
     <div id="calc" class="calc" aria-live="polite"></div>
     <div id="banners" style="display:flex;flex-direction:column;gap:8px"></div>
@@ -333,7 +334,7 @@ const TAR={
   D57d:{n:"D57d – tepelné čerpadlo (NT 20 h)",two:true,blok:["PV"],tc:true,cond:"Vytápění tepelným čerpadlem. Kompresor TČ blokován být nemusí, vodič ATC je volitelný."},
   D61d:{n:"D61d – víkendová (rekreační objekty)",two:true,blok:[],cond:"Víkendový režim pro rekreační objekty."}
 };
-const S={mode:"montaz",faze:"3",char:"B",jistic:25,predj:32,objekt:"rd",umisteni:"venkovni",vyska:1300,erRok:"stary",zasah:"vymena",fzm:"",vyroba:"ne",vyrKw:"",vyrA:"",sazbaZ:"D02d",sazbaNa:"D25d",ean:"",adresa:"",ans:{},view:"udaje",step:0,sug:{},foto:null};
+const S={mode:"montaz",faze:"3",char:"B",jistic:25,predj:32,objekt:"rd",umisteni:"venkovni",vyska:1300,erRok:"stary",zasah:"vymena",fzm:"",spol:"",vyroba:"ne",vyrKw:"",vyrA:"",sazbaZ:"D02d",sazbaNa:"D25d",ean:"",adresa:"",ans:{},view:"udaje",step:0,sug:{},foto:null};
 const two=()=>S.mode==="sazba"&&TAR[S.sazbaNa]&&TAR[S.sazbaNa].two;
 const tarOk=()=>S.mode==="sazba";
 const j=()=>Number(S.jistic)||0;
@@ -374,12 +375,14 @@ function acts(){
   if(S.fzm)a.push(S.fzm);
   return a;
 }
+function spolEx(){return S.mode==="sazba"&&S.spol==="ano";}
 function REQ(){
   const out={tol:true,y:[]}; let anyVod=false;
   COLS.forEach(c=>out[c]=false);
   acts().forEach(k=>{const v=VPA[k];if(!v)return;COLS.forEach((c,i)=>{if(v.r[i])out[c]=true;});
     if(v.r[7]){anyVod=true;if(!v.tol)out.tol=false;} if(v.y)out.y.push(v.y);});
   if(!anyVod)out.tol=false;
+  if(spolEx()){out.maska=false;out.y=out.y.filter(c=>c!=="maska");}
   return out;
 }
 const SECS=[
@@ -517,6 +520,7 @@ function renderTop(){
   {const R=REQ(),A=acts().filter(k=>VPA[k]);
    if(A.length){const req=COLS.filter(c=>R[c]&&c!=="mtp").map(c=>COLN[c]),no=COLS.filter(c=>!R[c]&&c!=="mtp").map(c=>COLN[c]);
     b.push(["info","Činnost: "+A.map(k=>VPA[k].n).join(" + ")+(A.length>1?" (platí přísnější požadavky)":"")+". Povinné dle VP_A: "+(req.join(", ")||"nic")+". Bez nutných úprav: "+(no.join(", ")||"nic")+"."+(R.vod&&R.tol?" Nedodržení barevného značení vodičů je tolerováno.":"")]);}
+   if(spolEx())b.push(["info","Společný ER s již osazenými elektroměry: krycí maska nebrání změně sazby (výjimka). Ostatní podmínky platí beze změny."]);
    if(A.some(k=>VPA[k].mimo))b.push(["info","Prostá výměna elektroměru není v tabulce VP_A, kontrolují se proto hlavní části rozváděče."]);
    if(R.hdv||R.odb)b.push(["warn","Činnost vyžaduje i "+[R.hdv?"HDV (PP nn 2.2)":"",R.odb?"odbočky k elektroměrům (PP nn 2.3)":""].filter(Boolean).join(" a ")+" podle aktuálních PP nn."]);
    if(R.y.length)b.push(["warn","Od 1. 1. 2024 se u této činnosti vyžaduje "+[...new Set(R.y)].map(c=>c==="maska"?"ER bez masky (3.2.2)":"jističe dle PP nn (3.4.1)").join(" a ")+"."]);
@@ -565,7 +569,7 @@ function firstOpen(){const st=steps();const i=st.findIndex(x=>!S.ans[x.it.id]);r
 /* ---------- protocol, history ---------- */
 function protocol(){
   const e=evaluate(); const d=new Date();
-  const L=["PROTOKOL KONTROLY ODBĚRNÉHO MÍSTA","Datum: "+d.toLocaleString("cs-CZ"),"Zakázka: "+(S.mode==="montaz"?"Montáž / výměna elektroměru":"Změna sazby "+S.sazbaZ+" → "+S.sazbaNa),"Činnost (VP_A): "+acts().filter(k=>VPA[k]).map(k=>VPA[k].n).join(" + "),
+  const L=["PROTOKOL KONTROLY ODBĚRNÉHO MÍSTA","Datum: "+d.toLocaleString("cs-CZ"),"Zakázka: "+(S.mode==="montaz"?"Montáž / výměna elektroměru":"Změna sazby "+S.sazbaZ+" → "+S.sazbaNa),"Činnost (VP_A): "+acts().filter(k=>VPA[k]).map(k=>VPA[k].n).join(" + ")+(spolEx()?" (společný ER s osazenými EM – maska tolerována)":""),
    "EAN: "+(S.ean||"–"),"Adresa: "+(S.adresa||"–"),"Jistič: "+S.faze+"×"+(j()||"–")+" A, char. "+S.char,
    "","VÝSLEDEK: "+e.v.t.toUpperCase()];
   if(e.fails.length){L.push("","Závady:");e.fails.forEach(x=>L.push(" - "+val(x.it.q)+(x.m?" ("+x.m+")":"")+" ["+x.it.ref+"]"));}
@@ -585,7 +589,7 @@ function renderHist(){const h=(store().hist||[]);const box=$("hist");
 
 /* ---------- events ---------- */
 function bindInputs(){
-  ["ean","adresa","jistic","objekt","umisteni","erRok","zasah","vyroba","vyrKw","vyrA","sazbaZ","sazbaNa","fzm"].forEach(id=>{
+  ["ean","adresa","jistic","objekt","umisteni","erRok","zasah","vyroba","vyrKw","vyrA","sazbaZ","sazbaNa","fzm","spol"].forEach(id=>{
     const el=$(id); el.value=S[id]; el.addEventListener(el.tagName==="SELECT"?"change":"input",()=>{S[id]=el.value;if(id==="fzm"&&el.value)S.faze=el.value==="f13"?"3":"1";if(id==="zasah"&&(el.value==="f13"||el.value==="f31"))S.faze=el.value==="f13"?"3":"1";renderAll();});
   });
 }
@@ -615,7 +619,7 @@ document.addEventListener("click",ev=>{
   if(b.id==="b-new"){Object.assign(S,{ean:"",adresa:"",ans:{},step:0,sug:{},foto:null});$("thumbs").innerHTML="";$("photo-status").textContent="";if(NATIVE){window.webkit.messageHandlers.newCheck.postMessage("");Object.keys(photoSlots).forEach(k=>delete photoSlots[k]);renderPhoto();}bindValues();go("udaje");return;}
   if(b.dataset.i!==undefined&&b.closest("#hist")){const x=(store().hist||[])[+b.dataset.i];if(x){Object.assign(S,JSON.parse(JSON.stringify(x.s)));bindValues();go("vysledek");}return;}
 });
-function bindValues(){["ean","adresa","jistic","objekt","umisteni","erRok","zasah","vyroba","vyrKw","vyrA","sazbaZ","sazbaNa","fzm"].forEach(id=>{$(id).value=S[id]??"";});}
+function bindValues(){["ean","adresa","jistic","objekt","umisteni","erRok","zasah","vyroba","vyrKw","vyrA","sazbaZ","sazbaNa","fzm","spol"].forEach(id=>{$(id).value=S[id]??"";});}
 
 /* ---------- fotka rozváděče ---------- */
 const LBL={faze:{"1":"1f","3":"3f"},umisteni:{vnitrni:"vnitřní",venkovni:"venkovní"},typ_elektromeru:{elektronicky:"elektronický",indukcni:"indukční (starý)"},
