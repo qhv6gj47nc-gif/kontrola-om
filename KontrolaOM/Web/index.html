@@ -244,7 +244,6 @@ footer{font-size:.78rem;color:var(--muted);padding-block:4px 24px;text-align:cen
     </div>
     <div class="grid2" id="vyroba-box" hidden>
       <label class="f">Instalovaný výkon (kW)<input id="vyrKw" type="number" inputmode="decimal" step="0.1"></label>
-      <label class="f">Max. AC proud na fázi (A)<input id="vyrA" type="number" inputmode="decimal" step="0.1"></label>
     </div>
     <div id="sazba-box" class="grid2" hidden>
       <label class="f" id="sazbaZ-l">Současná sazba<select id="sazbaZ"></select></label>
@@ -373,7 +372,7 @@ const VPA={
   vymena:{n:"Výměna elektroměru bez dalších změn",r:[0,0,0,1,1,1,1,1,0,0,1],mimo:1}
 };
 function acts(){
-  if(S.mode==="montaz")return [S.zasah];
+  if(S.mode==="montaz")return S.vyroba==="ano"?["novy","vyr2"]:["novy"];
   const a=[]; const z=TAR[S.sazbaZ],n=TAR[S.sazbaNa];
   if(z&&n){ if(!z.two&&n.two)a.push("t12"); else if(z.two&&!n.two)a.push("t21"); else if(z.two&&n.two)a.push("t22"); else a.push("t11"); }
   if(S.fzm)a.push(S.fzm);
@@ -449,8 +448,8 @@ const SECS=[
   {id:"t9",q:"Výrobna s omezováním výkonu zapojena dle schématu 2 (vodič N 0 %)",when:()=>S.vyroba==="ano",ref:"VP_01 schéma 2"}
  ]},
  {id:"vyrsec",t:"Výrobna / akumulace",when:()=>S.vyroba==="ano",items:[
-  {id:"y1",q:"Režim připojení výrobny",autoOnly:true,auto:()=>{const kw=Number(S.vyrKw),a=Number(S.vyrA);if(!kw||!a)return null;
-     return(kw<=10.8&&a<=16)?["ok","Mikrozdroj ("+kw+" kW, "+a+" A/f), zjednodušené připojení"]:["warn",kw+" kW / "+a+" A/f nad limit mikrozdroje (10,8 kW, 16 A/f), nutná smlouva o připojení dle kap. 4"]},ref:"PP nn 1.2"},
+  {id:"y1",q:"Režim připojení výrobny",autoOnly:true,auto:()=>{const kw=Number(S.vyrKw);if(!kw)return null;
+     return kw<=10.8?["ok","Mikrozdroj ("+kw+" kW), zjednodušené připojení"]:["warn",kw+" kW je nad limit mikrozdroje (10,8 kW), nutná smlouva o připojení dle kap. 4"]},ref:"PP nn 1.2"},
   {id:"y2",q:"Doloženo oznámení / smlouva o připojení výrobny",ref:"PP nn 1.2, kap. 4"},
   {id:"y4",col:"vyp",q:"Na výstupu z ER je doplněn vypínací prvek (OM se stávající výrobnou, přímé zapojení)",ref:"PP nn 3.4.4"},
   {id:"y3",q:"TOTAL/CENTRAL STOP: mechanický, uzamykatelný, označený vypínač, tlačítka ne na dvířkách ER",rec:true,ref:"PP nn 2.6"}
@@ -518,7 +517,7 @@ function renderTop(){
   document.querySelectorAll(".modes button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.mode===S.mode));
   document.querySelectorAll("#faze button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.v===S.faze));
   document.querySelectorAll("#char button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.v===S.char));
-  $("sazba-box").hidden=false; $("sazbaZ-l").hidden=$("fzm-l").hidden=S.mode!=="sazba"; $("sazbaNa-t").textContent=S.mode==="sazba"?"Požadovaná sazba":"Distribuční sazba"; $("zasah-l").hidden=S.mode==="sazba"; $("vyroba-box").hidden=S.vyroba!=="ano";
+  $("sazba-box").hidden=false; $("sazbaZ-l").hidden=$("fzm-l").hidden=S.mode!=="sazba"; $("sazbaNa-t").textContent=S.mode==="sazba"?"Požadovaná sazba":"Distribuční sazba"; $("zasah-l").hidden=true; $("vyroba-box").hidden=S.vyroba!=="ano";
   const c=[]; if(j()){c.push("Rezervovaný příkon: "+S.faze+"×"+j()+" A ≈ "+(S.faze==="3"?(j()*0.4*Math.sqrt(3)).toFixed(1):(j()*0.23).toFixed(1))+" kW")}
   $("calc").innerHTML=c.map(esc).join("<br>"); $("calc").hidden=!c.length;
   const b=[]; if(j()>80)b.push(["bad","Jistič nad 80 A: OM vyžaduje nepřímé měření s MTP. Tato pomůcka ho zatím nepokrývá."]);
@@ -593,7 +592,7 @@ function renderHist(){const h=(store().hist||[]);const box=$("hist");
 
 /* ---------- events ---------- */
 function bindInputs(){
-  ["ean","adresa","jistic","objekt","umisteni","erRok","zasah","vyroba","vyrKw","vyrA","sazbaZ","sazbaNa","fzm","em"].forEach(id=>{
+  ["ean","adresa","jistic","objekt","umisteni","erRok","zasah","vyroba","vyrKw","sazbaZ","sazbaNa","fzm","em"].forEach(id=>{
     const el=$(id); el.value=S[id]; el.addEventListener(el.tagName==="SELECT"?"change":"input",()=>{S[id]=el.value;if(id==="fzm"&&el.value)S.faze=el.value==="f13"?"3":"1";if(id==="zasah"&&(el.value==="f13"||el.value==="f31"))S.faze=el.value==="f13"?"3":"1";renderAll();});
   });
 }
@@ -623,7 +622,7 @@ document.addEventListener("click",ev=>{
   if(b.id==="b-new"){Object.assign(S,{ean:"",adresa:"",ans:{},step:0,sug:{},foto:null});$("thumbs").innerHTML="";$("photo-status").textContent="";if(NATIVE){window.webkit.messageHandlers.newCheck.postMessage("");Object.keys(photoSlots).forEach(k=>delete photoSlots[k]);renderPhoto();}bindValues();go("udaje");return;}
   if(b.dataset.i!==undefined&&b.closest("#hist")){const x=(store().hist||[])[+b.dataset.i];if(x){Object.assign(S,JSON.parse(JSON.stringify(x.s)));if(S.zasah==="vymena")S.zasah="novy";bindValues();go("vysledek");}return;}
 });
-function bindValues(){["ean","adresa","jistic","objekt","umisteni","erRok","zasah","vyroba","vyrKw","vyrA","sazbaZ","sazbaNa","fzm","em"].forEach(id=>{$(id).value=S[id]??"";});}
+function bindValues(){["ean","adresa","jistic","objekt","umisteni","erRok","zasah","vyroba","vyrKw","sazbaZ","sazbaNa","fzm","em"].forEach(id=>{$(id).value=S[id]??"";});}
 
 /* ---------- fotka rozváděče ---------- */
 const LBL={faze:{"1":"1f","3":"3f"},umisteni:{vnitrni:"vnitřní",venkovni:"venkovní"},typ_elektromeru:{elektronicky:"elektronický",indukcni:"indukční (starý)"},
