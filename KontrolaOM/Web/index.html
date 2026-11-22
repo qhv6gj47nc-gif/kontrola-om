@@ -149,6 +149,7 @@ textarea{width:100%;min-height:160px;font:500 .8rem var(--f-mono);color:var(--fg
 @keyframes slide{from{opacity:.4;transform:translateX(14px)}to{opacity:1;transform:none}}
 .wiz-q{font-family:var(--f-display);font-size:1.4rem;font-weight:700;line-height:1.25;letter-spacing:-.01em;margin:0;text-wrap:balance}
 .wiz-ans{display:grid;gap:10px}
+.inv .a-fail{order:-1}
 .wiz-ans button{min-height:60px;border-radius:16px;border:0;background:var(--surface);color:var(--fg);font-weight:650;font-size:1.1rem;cursor:pointer;box-shadow:var(--shadow);display:flex;align-items:center;justify-content:center;gap:10px;transition:background .15s,color .15s,transform .1s}
 .wiz-ans button::before{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;font-size:.95rem;font-weight:800}
 .wiz-ans .a-ok::before{content:"✓";background:var(--ok-bg);color:var(--ok)}
@@ -399,8 +400,8 @@ const SECS=[
   {id:"k1",col:"konstr",q:"Typově zkoušený ER s prohlášením o shodě a značkou CE, zkratová odolnost min. 10 kA",ref:"PP nn 3.2.1"},
   {id:"k2",col:"konstr",q:"Krytí odpovídá umístění",d:()=>"Otevřené dveře min. IP20. Zavřené: "+({vnitrni:"IP 2XC (vnitřní)",venkovni:"IP 43 (venkovní)",komunikace:"IP 44 (venkovní u komunikace)"})[S.umisteni]+".",ref:"PP nn 3.2.1"},
   {id:"k3",col:"konstr",q:"Přístrojová deska není dřevěná, pertinaxová ani gumonová",d:"Takovou desku je nutné vyměnit.",ref:"PP nn 3.2.1"},
-  {id:"k4",col:"maska",q:"Bez snímatelných krytů (masek), bez lepeného plexiskla a fólie",d:"Masky jen u stávajícího společného ER s fakturačním EM nebo u dočasného ER. Okénka min. 160×120 mm (3f) / 100×100 mm (1f).",ref:"PP nn 3.2.1"},
-  {id:"k4s",col:"maska",q:"Jde o společný ER pro více elektroměrů, ve kterém jsou některé EM již osazeny?",d:"Pokud ano, maska je tolerována a nebrání montáži EM ani změně sazby. Ostatní podmínky platí.",lab:["Ano, společný ER","Ne"],neutral:true,when:()=>S.ans.k4==="fail",ref:"PP nn 3.2.1"},
+  {id:"k4",col:"maska",q:"V rozváděči je krycí maska (snímatelný kryt), lepené plexisklo nebo fólie",lab:["Ne","Ano"],inv:true,d:"Masky jen u stávajícího společného ER s fakturačním EM nebo u dočasného ER. Okénka min. 160×120 mm (3f) / 100×100 mm (1f).",ref:"PP nn 3.2.1"},
+  {id:"k4s",col:"maska",q:"Jde o společný ER pro více elektroměrů, ve kterém jsou některé EM již osazeny?",d:"Pokud ano, maska je tolerována a nebrání montáži EM ani změně sazby. Ostatní podmínky platí.",neutral:true,when:()=>S.ans.k4==="fail",ref:"PP nn 3.2.1"},
   {id:"k7",col:"konstr",q:"Kabelový prostor oddělen pevnou nebo plombovatelnou přepážkou",ref:"PP nn 3.2.2"},
   {id:"k9",col:"konstr",q:"Více OM v jednom ER: označení a schéma zapojení",when:()=>S.objekt==="bd"||S.objekt==="chata",ref:"PP nn 3.2.1"}
  ]},
@@ -502,7 +503,7 @@ function renderSections(){
       if(it.d)h+='<p class="d">'+esc(val(it.d))+'</p>';
       if(it.autoOnly){ h+= r.s? '<div class="auto '+r.s+'">'+esc(r.m)+'</div>' : '<div class="auto" style="background:var(--surface-2);color:var(--muted)">Doplňte údaje nahoře</div>'; }
       else{ const a=S.ans[it.id]||"";
-        h+='<div class="ans" role="group" aria-label="Odpověď"><button class="a-ok" data-id="'+it.id+'" data-a="ok" aria-pressed="'+(a==="ok")+'">'+(it.lab?it.lab[0]:"Vyhovuje")+'</button><button class="a-fail" data-id="'+it.id+'" data-a="fail" aria-pressed="'+(a==="fail")+'">'+(it.lab?it.lab[1]:"Závada")+'</button><button class="a-na" data-id="'+it.id+'" data-a="na" aria-pressed="'+(a==="na")+'">Netýká se</button></div>'; }
+        h+='<div class="ans'+(it.inv?' inv':'')+'" role="group" aria-label="Odpověď"><button class="a-ok" data-id="'+it.id+'" data-a="ok" aria-pressed="'+(a==="ok")+'">'+(it.lab?it.lab[0]:"Ano")+'</button><button class="a-fail" data-id="'+it.id+'" data-a="fail" aria-pressed="'+(a==="fail")+'">'+(it.lab?it.lab[1]:"Ne")+'</button><button class="a-na" data-id="'+it.id+'" data-a="na" aria-pressed="'+(a==="na")+'">Netýká se</button></div>'; }
       h+='<span class="ref">'+esc(it.ref)+'</span>';
       el.innerHTML=h; list.appendChild(el);
     });
@@ -551,9 +552,9 @@ function renderWizard(){
    '<div class="prog" aria-hidden="true"><i style="width:'+Math.round(answered/st.length*100)+'%"></i></div>'+
    '<div class="wiz-card"><p class="wiz-q">'+esc(val(it.q))+(it.rec?'<span class="rec" style="font-size:.68rem;font-weight:600;color:var(--accent);background:var(--accent-2);border-radius:6px;padding:2px 6px;margin-left:6px;vertical-align:4px;text-transform:uppercase">doporučeno</span>':'')+'</p>'+
    (it.d?'<p class="d">'+esc(val(it.d))+'</p>':'')+(S.sug&&S.sug[it.id]?'<p class="sugnote">Předvyplněno z fotky: '+esc(S.sug[it.id])+' Zkontrolujte a potvrďte.</p>':'')+'<span class="ref">'+esc(it.ref)+'</span></div>'+
-   '<div class="wiz-ans" role="group" aria-label="Odpověď">'+
-   '<button class="a-ok" data-w="ok" aria-pressed="'+(a==="ok")+'">'+(it.lab?it.lab[0]:"Vyhovuje")+'</button>'+
-   '<button class="a-fail" data-w="fail" aria-pressed="'+(a==="fail")+'">'+(it.lab?it.lab[1]:"Závada")+'</button>'+
+   '<div class="wiz-ans'+(it.inv?' inv':'')+'" role="group" aria-label="Odpověď">'+
+   '<button class="a-ok" data-w="ok" aria-pressed="'+(a==="ok")+'">'+(it.lab?it.lab[0]:"Ano")+'</button>'+
+   '<button class="a-fail" data-w="fail" aria-pressed="'+(a==="fail")+'">'+(it.lab?it.lab[1]:"Ne")+'</button>'+
    '<button class="a-na" data-w="na" aria-pressed="'+(a==="na")+'">Netýká se</button></div>'+
    '<div class="wiz-nav"><button class="btn ghost" id="w-prev"'+(S.step===0?' disabled':'')+'>Zpět</button><button class="btn ghost" id="w-next">'+(S.step===st.length-1?'Výsledek':'Přeskočit')+'</button></div>';
 }
@@ -644,6 +645,7 @@ function photoRequest(){
     "- Jednopólový jistič vedle hlavního jističe je obvykle jistič spínacího prvku (HDO).",
     "Uváděj jen to, co je na fotce skutečně vidět. Hodnotu jističe uveď jen tehdy, když je potisk čitelný, jinak null. Co nejde poznat, označ jako nezjisteno.",
     "Do pole polozky dávej jen body kontroly, které lze z fotky posoudit s vysokou jistotou (např. materiál desky, snímatelné kryty, krytí podle umístění, upevnění). Rozměry, výšky a průřezy vodičů z fotky neposuzuj.",
+    "U položek znamená odpoved ok stav bez závady (vyhovuje PP nn) a fail závadu. Pozor: bod k4 je formulován jako zjištění masky, takže maska, snímatelný kryt, lepené plexisklo nebo fólie = fail.",
     "Pole duvod a popis piš česky, stručně (jedna věta)."].join("\n");
   const text="Zakázka: "+(S.mode==="montaz"?"montáž / výměna elektroměru":"změna sazby na "+S.sazbaNa)+". Typ objektu: "+S.objekt+".\n"+
     "Dostaneš 3 fotky: celkové umístění rozváděče, detail rozváděče a detail jističů. Hodnotu a charakteristiku jističe čti hlavně z detailu jističů.\n"+
