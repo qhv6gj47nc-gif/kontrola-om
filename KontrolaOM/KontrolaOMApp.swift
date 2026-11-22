@@ -8,7 +8,7 @@ struct KontrolaOMApp: App {
         WindowGroup {
             WebView()
                 .ignoresSafeArea(.container, edges: .bottom)
-                .background(Color(UIColor.systemGroupedBackground))
+                .background(Color(red: 0.949, green: 0.31, blue: 0.0))
         }
     }
 }
@@ -21,7 +21,7 @@ struct WebView: UIViewRepresentable {
     func makeUIView(context: Context) -> WKWebView {
         let config = WKWebViewConfiguration()
         config.websiteDataStore = .default()          // trvalé localStorage
-        for name in ["share", "setKey", "hasKey", "photo", "newCheck"] {
+        for name in ["share", "setKey", "hasKey", "photo", "newCheck", "listPhotos", "analyze"] {
             config.userContentController.add(context.coordinator, name: name)
         }
         let web = WKWebView(frame: .zero, configuration: config)
@@ -41,7 +41,7 @@ struct WebView: UIViewRepresentable {
     final class Coordinator: NSObject, WKNavigationDelegate, WKScriptMessageHandler,
                              UIImagePickerControllerDelegate, UINavigationControllerDelegate {
         weak var webView: WKWebView?
-        private var pendingRequest: [String: Any]?
+        private var pendingSlot = 1
 
         private var rootVC: UIViewController? {
             let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene
@@ -52,8 +52,8 @@ struct WebView: UIViewRepresentable {
         }
 
         /// Zavolá funkci v JS s JSON argumentem (bezpečně zakódovaným).
-        private func callJS(_ fn: String, _ value: Any) {
-            guard let data = try? JSONSerialization.data(withJSONObject: [value]),
+        private func callJS(_ fn: String, _ values: Any...) {
+            guard let data = try? JSONSerialization.data(withJSONObject: values),
                   let arr = String(data: data, encoding: .utf8) else { return }
             DispatchQueue.main.async {
                 self.webView?.evaluateJavaScript("window.\(fn) && window.\(fn).apply(null, \(arr))")
@@ -97,10 +97,35 @@ struct WebView: UIViewRepresentable {
             case "hasKey":
                 callJS("onKeyState", KeyStore.load() != nil)
 
-            case "photo":
+            case "listPhotos":
+                var thumbs: [String: String] = [:]
+                for (slot, url) in ProtocolExport.slotPhotos() {
+                    if let img = UIImage(contentsOfFile: url.path),
+                       let t = PhotoAnalyzer.jpegBase64(img, maxSide: 360) { thumbs[String(slot)] = t }
+                }
+                callJS("onPhotoSlots", thumbs)
+
+            case "analyze":
                 guard let body = message.body as? [String: Any],
-                      let request = body["request"] as? [String: Any], let root = rootVC else { return }
-                pendingRequest = request
+                      let request = body["request"] as? [String: Any] else { return }
+                let labels = request["labels"] as? [String] ?? []
+                let photos = ProtocolExport.slotPhotos().compactMap { slot, url -> (label: String, image: UIImage)? in
+                    guard let img = UIImage(contentsOfFile: url.path) else { return nil }
+                    let label = slot - 1 < labels.count ? labels[slot - 1] : "Fotka \(slot)"
+                    return (label: label, image: img)
+                }
+                Task {
+                    do {
+                        let json = try await PhotoAnalyzer.analyze(photos: photos, request: request)
+                        callJS("onPhotoResult", json)
+                    } catch {
+                        callJS("onPhotoError", error.localizedDescription)
+                    }
+                }
+
+            case "photo":
+                guard let body = message.body as? [String: Any], let root = rootVC else { return }
+                pendingSlot = body["slot"] as? Int ?? 1
                 let picker = UIImagePickerController()
                 let wantsCamera = (body["source"] as? String) != "library"
                 picker.sourceType = wantsCamera && UIImagePickerController.isSourceTypeAvailable(.camera)
@@ -120,20 +145,12 @@ struct WebView: UIViewRepresentable {
         func imagePickerController(_ picker: UIImagePickerController,
                                    didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
             picker.dismiss(animated: true)
-            guard let image = info[.originalImage] as? UIImage, let request = pendingRequest else {
+            guard let image = info[.originalImage] as? UIImage else {
                 callJS("onPhotoError", "Fotku se nepodařilo načíst.")
                 return
             }
-            ProtocolExport.savePhoto(image)
-            if let thumb = PhotoAnalyzer.jpegBase64(image) { callJS("onPhotoTaken", thumb) }
-            Task {
-                do {
-                    let json = try await PhotoAnalyzer.analyze(images: [image], request: request)
-                    callJS("onPhotoResult", json)
-                } catch {
-                    callJS("onPhotoError", error.localizedDescription)
-                }
-            }
+            ProtocolExport.savePhoto(image, slot: pendingSlot)
+            callJS("onPhotoTaken", pendingSlot, PhotoAnalyzer.jpegBase64(image, maxSide: 360) ?? "")
         }
     }
 }

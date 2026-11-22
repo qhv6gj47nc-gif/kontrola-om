@@ -2,7 +2,7 @@
 <style>:root{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}body{margin:0;font:14px system-ui}img{max-width:100%}[hidden]{display:none!important}</style>
 <title>Kontrola odběrného místa</title>
 <meta name="claude:viewport-fit-sides" content="cover">
-<meta name="theme-color" content="#f2f3f7">
+<meta name="theme-color" content="#f24f00">
 
 
 
@@ -10,7 +10,7 @@
 /* Layout: iOS-style single column — large title header with blur, grouped inset cards, one-question guide, floating status capsule */
 :root{
   --bg:#f2f3f7; --surface:#ffffff; --surface-2:#eef0f5; --fg:#0f1420; --muted:#6b7385; --line:#e2e5ec;
-  --accent:#2563eb; --accent-2:#e8efff; --accent-fg:#ffffff; --glass:rgba(242,243,247,.78);
+  --accent:#f24f00; --accent-2:#ffede3; --accent-fg:#ffffff; --glass:rgba(242,243,247,.78);
   --ok:#16a34a; --ok-bg:#e3f6ea; --bad:#dc2626; --bad-bg:#fde8e8; --warn:#b45309; --warn-bg:#fef3dc;
   --shadow:0 1px 2px rgba(15,20,32,.05),0 4px 16px rgba(15,20,32,.06);
   --r:18px;
@@ -20,33 +20,35 @@
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#000000; --surface:#16181d; --surface-2:#22252c; --fg:#f2f4f8; --muted:#9097a6; --line:#2a2e36;
-  --accent:#5b8cff; --accent-2:#1b2540; --accent-fg:#ffffff; --glass:rgba(0,0,0,.72);
+  --accent:#ff7a33; --accent-2:#3a1f10; --accent-fg:#ffffff; --glass:rgba(0,0,0,.72);
   --ok:#34d399; --ok-bg:#0f2a1f; --bad:#f87171; --bad-bg:#341617; --warn:#fbbf24; --warn-bg:#33270c;
   --shadow:none; color-scheme:dark }}
 :root[data-theme="dark"]{
   --bg:#000000; --surface:#16181d; --surface-2:#22252c; --fg:#f2f4f8; --muted:#9097a6; --line:#2a2e36;
-  --accent:#5b8cff; --accent-2:#1b2540; --accent-fg:#ffffff; --glass:rgba(0,0,0,.72);
+  --accent:#ff7a33; --accent-2:#3a1f10; --accent-fg:#ffffff; --glass:rgba(0,0,0,.72);
   --ok:#34d399; --ok-bg:#0f2a1f; --bad:#f87171; --bad-bg:#341617; --warn:#fbbf24; --warn-bg:#33270c;
   --shadow:none; color-scheme:dark }
 
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 [hidden]{display:none!important}
 body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:16px;line-height:1.45;padding-bottom:110px;-webkit-font-smoothing:antialiased}
-body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--glass);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px)}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:#f24f00}
 .wrap{max-width:680px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 button{font-family:inherit}
 button:active{transform:scale(.98)}
 button:disabled{opacity:.45}
 
 /* header */
-header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--glass);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);border-bottom:1px solid var(--line)}
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:#f24f00;color:#fff;box-shadow:0 2px 12px rgba(242,79,0,.25)}
 header.top .wrap{padding-block:14px 12px;display:flex;flex-direction:column;gap:12px}
-.brand{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
+.brand{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand-l{display:flex;align-items:center;gap:12px;min-width:0}
+#logo{height:34px;width:auto;max-width:120px;object-fit:contain;display:block}
 .brand h1{margin:0;font-family:var(--f-display);font-size:2rem;font-weight:800;letter-spacing:-.02em;line-height:1.05}
-.brand small{font-size:.72rem;color:var(--muted);text-align:right;line-height:1.3}
-.modes{display:grid;grid-template-columns:1fr 1fr;gap:2px;background:var(--surface-2);padding:3px;border-radius:12px}
-.modes button{appearance:none;border:0;border-radius:9px;padding:9px 8px;font-weight:600;font-size:.92rem;color:var(--muted);background:transparent;cursor:pointer;transition:background .15s,color .15s}
-.modes button[aria-pressed="true"]{background:var(--surface);color:var(--fg);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.brand small{font-size:.72rem;color:rgba(255,255,255,.85);text-align:right;line-height:1.3}
+.modes{display:grid;grid-template-columns:1fr 1fr;gap:2px;background:rgba(0,0,0,.16);padding:3px;border-radius:12px}
+.modes button{appearance:none;border:0;border-radius:9px;padding:9px 8px;font-weight:600;font-size:.92rem;color:rgba(255,255,255,.9);background:transparent;cursor:pointer;transition:background .15s,color .15s}
+.modes button[aria-pressed="true"]{background:#fff;color:#c23f00;box-shadow:0 1px 3px rgba(0,0,0,.12)}
 
 main{display:flex;flex-direction:column;gap:20px;padding-block:20px}
 h2{font-family:var(--f-display);font-size:1.25rem;font-weight:700;letter-spacing:-.01em;margin:0;color:var(--fg);text-wrap:balance}
@@ -74,6 +76,15 @@ button:focus-visible,summary:focus-visible{outline:3px solid var(--accent);outli
 .photo .q{font-weight:700}
 .photo .row{display:flex;gap:8px;flex-wrap:wrap}
 .photo .row .btn{flex:1 1 140px}
+.slots{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.slot{display:flex;flex-direction:column;gap:6px;min-width:0}
+.slot-btn{aspect-ratio:3/4;max-width:100%;border-radius:14px;border:2px dashed color-mix(in srgb,var(--accent) 45%,transparent);background:var(--surface);color:var(--accent);display:grid;place-items:center;padding:0;cursor:pointer;overflow:hidden;position:relative}
+.slot-btn img{width:100%;height:100%;object-fit:cover;display:block}
+.slot-btn.done{border:2px solid var(--ok)}
+.slot-btn.done::after{content:"✓";position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:50%;background:var(--ok);color:#fff;font-size:.75rem;font-weight:800;display:grid;place-items:center}
+.slot-btn svg{width:30px;height:30px}
+.slot-l{font-size:.74rem;font-weight:600;line-height:1.2;text-align:center}
+.slot-g{border:0;background:none;color:var(--accent);font-size:.74rem;font-weight:600;padding:2px;cursor:pointer}
 .thumbs{display:flex;gap:8px;flex-wrap:wrap}
 .thumbs img{width:68px;height:68px;object-fit:cover;border-radius:12px}
 .sug{background:var(--surface);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:8px;font-size:.92rem}
@@ -127,13 +138,13 @@ textarea{width:100%;min-height:160px;font:500 .8rem var(--f-mono);color:var(--fg
 .docs li{margin-bottom:6px}
 
 /* guide */
-.start{min-height:56px;font-size:1.08rem;width:100%;border-radius:16px;box-shadow:0 6px 20px rgba(37,99,235,.28)}
+.start{min-height:56px;font-size:1.08rem;width:100%;border-radius:16px;box-shadow:0 6px 20px rgba(242,79,0,.3)}
 .wiz{display:flex;flex-direction:column;gap:16px}
 .wiz-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
 .wiz-sec{font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);min-width:0}
 .wiz-num{font-size:.85rem;font-weight:600;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
 .prog{height:6px;border-radius:99px;background:var(--surface-2);overflow:hidden}
-.prog>i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--accent),#7c9cff);transition:width .3s ease}
+.prog>i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--accent),#ff9a5c);transition:width .3s ease}
 .wiz-card{background:var(--surface);border-radius:22px;padding:24px 20px;display:flex;flex-direction:column;gap:12px;min-height:200px;box-shadow:var(--shadow);animation:slide .22s ease}
 @keyframes slide{from{opacity:.4;transform:translateX(14px)}to{opacity:1;transform:none}}
 .wiz-q{font-family:var(--f-display);font-size:1.4rem;font-weight:700;line-height:1.25;letter-spacing:-.01em;margin:0;text-wrap:balance}
@@ -164,7 +175,7 @@ footer{font-size:.78rem;color:var(--muted);padding-block:4px 24px;text-align:cen
 </style>
 
 <header class="top"><div class="wrap">
-  <div class="brand"><h1>Kontrola OM</h1><small>Připojovací podmínky nn<br>platnost od 1. 9. 2025</small></div>
+  <div class="brand"><div class="brand-l"><img id="logo" src="logo.png" alt="Logo" hidden onload="this.hidden=false"><h1>Kontrola OM</h1></div><small>Připojovací podmínky nn<br>platnost od 1. 9. 2025</small></div>
   <div class="modes" role="group" aria-label="Typ zakázky">
     <button id="m-montaz" data-mode="montaz" aria-pressed="true">Montáž / výměna EM</button>
     <button id="m-sazba" data-mode="sazba" aria-pressed="false">Změna sazby</button>
@@ -176,13 +187,13 @@ footer{font-size:.78rem;color:var(--muted);padding-block:4px 24px;text-align:cen
   <section class="card" aria-labelledby="h-om">
     <h2 id="h-om">Odběrné místo</h2>
     <div class="photo" id="photo-box">
-      <p class="q" style="margin:0">Fotka rozváděče</p>
-      <p class="hint" id="photo-hint">Vyfoťte celý rozváděč, případně i detail jističe. Aplikace rozpozná přístroje a předvyplní, co z fotky jde poznat. Vše pak potvrdíte v průvodci.</p>
+      <p class="q" style="margin:0">Fotky rozváděče <span id="photo-count" class="hint" style="font-weight:600"></span></p>
+      <p class="hint" id="photo-hint">Pořiďte 3 povinné fotky. Klepnutím na políčko otevřete fotoaparát.</p>
+      <div class="slots" id="slots"></div>
       <div class="row" id="photo-btns">
-        <button class="btn" id="b-cam">Vyfotit rozváděč</button>
-        <button class="btn ghost" id="b-lib">Vybrat z galerie</button>
+        <button class="btn" id="b-analyze" disabled>Rozpoznat z fotek</button>
       </div>
-      <div class="thumbs" id="thumbs"></div>
+      <div class="thumbs" id="thumbs" hidden></div>
       <p class="hint" id="photo-status" aria-live="polite"></p>
       <div id="photo-res"></div>
     </div>
@@ -517,7 +528,7 @@ document.addEventListener("click",ev=>{
   if(b.dataset.jump){const i=steps().findIndex(x=>x.it.id===b.dataset.jump);if(i>=0){S.step=i;go("pruvodce");}return;}
   if(b.id==="w-prev"){S.step--;renderAll();return;}
   if(b.id==="w-next"){const st=steps();if(S.step<st.length-1){S.step++;renderAll();}else go("vysledek");return;}
-  if(b.id==="b-start"||(b.id==="b-go"&&S.view==="udaje")){S.step=firstOpen();go("pruvodce");return;}
+  if(b.id==="b-start"||(b.id==="b-go"&&S.view==="udaje")){if(NATIVE&&!photosDone()){$("photo-status").textContent="Nejdřív pořiďte všechny 3 povinné fotky.";$("photo-box").scrollIntoView({behavior:"smooth",block:"center"});return;}S.step=firstOpen();go("pruvodce");return;}
   if(b.id==="b-go"){go(S.view==="vysledek"?"udaje":"vysledek");return;}
   if(b.id==="b-resume"){S.step=firstOpen();go("pruvodce");return;}
   if(b.id==="b-list"){go("seznam");return;}
@@ -528,7 +539,7 @@ document.addEventListener("click",ev=>{
     const fb=()=>{ta.focus();ta.select();$("copy-msg").textContent="Text je označený, zkopírujte ho ručně.";};
     try{navigator.clipboard.writeText(t).then(done,fb)}catch(_){fb()} return;}
   if(b.id==="b-save"){const o=store();o.hist=[{d:new Date().toLocaleString("cs-CZ"),v:evaluate().v.t,s:JSON.parse(JSON.stringify(S))},...(o.hist||[])].slice(0,30);storeSet(o);renderHist();$("copy-msg").textContent="Uloženo do historie v tomto zařízení.";return;}
-  if(b.id==="b-new"){Object.assign(S,{ean:"",adresa:"",ans:{},step:0,sug:{},foto:null});$("thumbs").innerHTML="";$("photo-status").textContent="";if(NATIVE)window.webkit.messageHandlers.newCheck.postMessage("");bindValues();go("udaje");return;}
+  if(b.id==="b-new"){Object.assign(S,{ean:"",adresa:"",ans:{},step:0,sug:{},foto:null});$("thumbs").innerHTML="";$("photo-status").textContent="";if(NATIVE){window.webkit.messageHandlers.newCheck.postMessage("");Object.keys(photoSlots).forEach(k=>delete photoSlots[k]);renderPhoto();}bindValues();go("udaje");return;}
   if(b.dataset.i!==undefined&&b.closest("#hist")){const x=(store().hist||[])[+b.dataset.i];if(x){Object.assign(S,JSON.parse(JSON.stringify(x.s)));bindValues();go("vysledek");}return;}
 });
 function bindValues(){["ean","adresa","jistic","objekt","umisteni","erRok","zasah","vyroba","vyrKw","vyrA","sazbaZ","sazbaNa"].forEach(id=>{$(id).value=S[id]??"";});}
@@ -557,14 +568,28 @@ function photoRequest(){
     "Do pole polozky dávej jen body kontroly, které lze z fotky posoudit s vysokou jistotou (např. materiál desky, snímatelné kryty, krytí podle umístění, upevnění). Rozměry, výšky a průřezy vodičů z fotky neposuzuj.",
     "Pole duvod a popis piš česky, stručně (jedna věta)."].join("\n");
   const text="Zakázka: "+(S.mode==="montaz"?"montáž / výměna elektroměru":"změna sazby na "+S.sazbaNa)+". Typ objektu: "+S.objekt+".\n"+
+    "Dostaneš 3 fotky: celkové umístění rozváděče, detail rozváděče a detail jističů. Hodnotu a charakteristiku jističe čti hlavně z detailu jističů.\n"+
     "Body kontroly (id: text):\n"+items.map(x=>x.id+": "+x.t).join("\n")+
     "\n\nPopiš rozváděč na fotce a vyplň rozpoznané údaje.";
-  return {system,text,schema};
+  return {system,text,schema,labels:SLOTS.map(([n,l])=>"Fotka "+n+": "+l)};
 }
 let pendingFoto=null;
+const SLOTS=[[1,"Celkové umístění rozváděče"],[2,"Detail rozváděče"],[3,"Detail jističů"]];
+const photoSlots={};
+const CAM='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>';
+function photosDone(){return SLOTS.every(([n])=>photoSlots[n]);}
+function renderSlots(){
+  $("slots").innerHTML=SLOTS.map(([n,l])=>'<div class="slot"><button class="slot-btn'+(photoSlots[n]?' done':'')+'" data-slot="'+n+'" aria-label="'+esc(l)+'">'+
+    (photoSlots[n]?'<img alt="" src="data:image/jpeg;base64,'+photoSlots[n]+'">':CAM)+'</button><span class="slot-l">'+n+'. '+esc(l)+'</span>'+
+    '<button class="slot-g" data-slotlib="'+n+'">z galerie</button></div>').join("");
+  const c=SLOTS.filter(([n])=>photoSlots[n]).length;
+  $("photo-count").textContent=c+" / 3";
+  $("b-analyze").disabled=!photosDone();
+}
 function renderPhoto(){
-  $("photo-btns").hidden=!NATIVE; $("key-card").hidden=!NATIVE;
-  if(!NATIVE){$("photo-hint").textContent="Rozpoznávání z fotky je dostupné v aplikaci pro iPhone.";return;}
+  $("photo-btns").hidden=!NATIVE; $("key-card").hidden=!NATIVE; $("slots").hidden=!NATIVE;
+  if(!NATIVE){$("photo-hint").textContent="Fotky a rozpoznávání jsou dostupné v aplikaci pro iPhone.";$("photo-count").textContent="";return;}
+  renderSlots();
   const r=pendingFoto; const box=$("photo-res");
   if(!r){box.innerHTML="";return;}
   const rows=[];const add=(k,v)=>{if(v&&v!=="nezjisteno")rows.push([k,v])};
@@ -588,17 +613,19 @@ function applyPhoto(){
   pendingFoto=null;bindValues();renderAll();renderPhoto();
   $("photo-status").textContent="Návrh použit. Předvyplněné body potvrdíte v průvodci.";
 }
-window.onPhotoTaken=(b64)=>{const img=document.createElement("img");img.src="data:image/jpeg;base64,"+b64;img.alt="Fotka rozváděče";$("thumbs").appendChild(img);
-  $("photo-status").textContent="Rozpoznávám fotku… (obvykle do minuty)";};
+window.onPhotoTaken=(slot,b64)=>{photoSlots[slot]=b64;setBusy(false);renderSlots();
+  $("photo-status").textContent=photosDone()?"Všechny fotky jsou pořízené. Můžete je nechat rozpoznat, nebo rovnou zahájit kontrolu.":"";};
+window.onPhotoSlots=(m)=>{Object.keys(photoSlots).forEach(k=>delete photoSlots[k]);Object.assign(photoSlots,m||{});renderSlots();};
 window.onPhotoResult=(txt)=>{try{pendingFoto=JSON.parse(txt);$("photo-status").textContent="";}catch(_){ $("photo-status").textContent="Výsledek se nepodařilo přečíst, zkuste to znovu.";}
   setBusy(false);renderPhoto();};
 window.onPhotoError=(msg)=>{$("photo-status").textContent=msg;setBusy(false);};
 window.onPhotoCancel=()=>{setBusy(false);};
 window.onExported=(p)=>{$("copy-msg").textContent="Protokol s fotkami je uložený v aplikaci Soubory → Kontrola OM → "+p+". Vyberte, kam ho ještě uložit (např. iCloud Drive).";};
 window.onKeyState=(has)=>{$("key-state").textContent=has?"Klíč je uložený.":"Klíč zatím není uložený.";};
-function setBusy(b){$("b-cam").disabled=b;$("b-lib").disabled=b;}
+function setBusy(b){document.querySelectorAll("[data-slot],[data-slotlib]").forEach(x=>x.disabled=b);$("b-analyze").disabled=b||!photosDone();}
 document.addEventListener("click",ev=>{const b=ev.target.closest("button");if(!b)return;
-  if(b.id==="b-cam"||b.id==="b-lib"){setBusy(true);$("photo-status").textContent="";window.webkit.messageHandlers.photo.postMessage({source:b.id==="b-cam"?"camera":"library",request:photoRequest()});}
+  if(b.dataset.slot||b.dataset.slotlib){setBusy(true);window.webkit.messageHandlers.photo.postMessage({slot:+(b.dataset.slot||b.dataset.slotlib),source:b.dataset.slot?"camera":"library"});}
+  if(b.id==="b-analyze"){setBusy(true);$("photo-status").textContent="Rozpoznávám fotky… (obvykle do minuty)";window.webkit.messageHandlers.analyze.postMessage({request:photoRequest()});}
   if(b.id==="b-apply")applyPhoto();
   if(b.id==="b-drop"){pendingFoto=null;renderPhoto();}
   if(b.id==="b-key"){window.webkit.messageHandlers.setKey.postMessage($("apikey").value);$("apikey").value="";}
@@ -611,7 +638,7 @@ if(NATIVE)$("b-copy").textContent="Uložit protokol (PDF)";
 fillTariffs();
 const saved=store().cur; if(saved&&typeof saved==="object")Object.assign(S,saved);
 else{ /* ukázkový stav: rozpracovaná kontrola */ S.adresa="Ukázka – Lipová 12, Kolín"; }
-bindInputs(); renderAll(); renderHist(); renderPhoto(); if(NATIVE)window.webkit.messageHandlers.hasKey.postMessage("");
+bindInputs(); renderAll(); renderHist(); renderPhoto(); if(NATIVE){window.webkit.messageHandlers.hasKey.postMessage("");window.webkit.messageHandlers.listPhotos.postMessage("");}
 })();
 </script>
 </body></html>

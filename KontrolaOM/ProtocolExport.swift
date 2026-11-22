@@ -19,10 +19,21 @@ enum ProtocolExport {
         return url
     }
 
-    static func savePhoto(_ image: UIImage) {
-        let n = ((try? FileManager.default.contentsOfDirectory(atPath: currentPhotosDir.path))?.count ?? 0) + 1
-        let url = currentPhotosDir.appendingPathComponent(String(format: "foto-%02d.jpg", n))
+    /// Tři povinné fotky kontroly.
+    static let slotNames = [1: "1-celkove-umisteni", 2: "2-detail-rozvadece", 3: "3-detail-jisticu"]
+    static let slotTitles = [1: "Celkové umístění rozváděče", 2: "Detail rozváděče", 3: "Detail jističů"]
+
+    static func savePhoto(_ image: UIImage, slot: Int) {
+        let url = currentPhotosDir.appendingPathComponent("foto-\(slotNames[slot] ?? String(slot)).jpg")
         if let data = image.jpegData(compressionQuality: 0.85) { try? data.write(to: url) }
+    }
+
+    /// Uložené fotky podle pozice (1–3), seřazené.
+    static func slotPhotos() -> [(slot: Int, url: URL)] {
+        slotNames.keys.sorted().compactMap { slot in
+            let url = currentPhotosDir.appendingPathComponent("foto-\(slotNames[slot]!).jpg")
+            return FileManager.default.fileExists(atPath: url.path) ? (slot, url) : nil
+        }
     }
 
     static func currentPhotos() -> [URL] {
@@ -98,7 +109,9 @@ enum ProtocolExport {
             for (i, url) in photos.enumerated() {
                 guard let img = UIImage(contentsOfFile: url.path) else { continue }
                 ctx.beginPage()
-                ("Fotka \(i + 1)" as NSString).draw(at: CGPoint(x: margin, y: margin),
+                let slot = slotPhotos().first(where: { $0.url.lastPathComponent == url.lastPathComponent })?.slot
+                let caption = slot.flatMap { slotTitles[$0] } ?? "Fotka \(i + 1)"
+                (caption as NSString).draw(at: CGPoint(x: margin, y: margin),
                                                     withAttributes: [.font: UIFont.boldSystemFont(ofSize: 13)])
                 let box = CGRect(x: margin, y: margin + 26, width: page.width - 2 * margin,
                                  height: page.height - 2 * margin - 26)

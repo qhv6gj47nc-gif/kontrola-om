@@ -46,8 +46,7 @@ enum PhotoAnalyzer {
     }
 
     /// Zmenší fotku na max. 1568 px na delší straně (víc model stejně nevyužije).
-    static func jpegBase64(_ image: UIImage) -> String? {
-        let maxSide: CGFloat = 1568
+    static func jpegBase64(_ image: UIImage, maxSide: CGFloat = 1568) -> String? {
         let scale = min(1, maxSide / max(image.size.width, image.size.height))
         let size = CGSize(width: image.size.width * scale, height: image.size.height * scale)
         let renderer = UIGraphicsImageRenderer(size: size)
@@ -56,12 +55,14 @@ enum PhotoAnalyzer {
     }
 
     /// - Parameters:
-    ///   - request: objekt z webové části: { system, text, schema }
-    static func analyze(images: [UIImage], request: [String: Any]) async throws -> String {
+    ///   - photos: dvojice (popisek, fotka); popisek se pošle jako text před fotkou
+    ///   - request: objekt z webové části: { system, text, schema, labels }
+    static func analyze(photos: [(label: String, image: UIImage)], request: [String: Any]) async throws -> String {
         guard let key = KeyStore.load(), !key.isEmpty else { throw Failure.noKey }
         var content: [[String: Any]] = []
-        for img in images {
+        for (label, img) in photos {
             guard let b64 = jpegBase64(img) else { throw Failure.badImage }
+            content.append(["type": "text", "text": label])
             content.append(["type": "image",
                             "source": ["type": "base64", "media_type": "image/jpeg", "data": b64]])
         }
