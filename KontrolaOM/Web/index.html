@@ -178,7 +178,7 @@ footer{font-size:.78rem;color:var(--muted);padding-block:4px 24px;text-align:cen
 <header class="top"><div class="wrap">
   <div class="brand"><h1>Kontrola OM</h1><img id="logo" src="logo.png" alt="Logo" hidden onload="this.hidden=false"></div>
   <div class="modes" role="group" aria-label="Typ zakázky">
-    <button id="m-montaz" data-mode="montaz" aria-pressed="true">Montáž / výměna EM</button>
+    <button id="m-montaz" data-mode="montaz" aria-pressed="true">Montáž</button>
     <button id="m-sazba" data-mode="sazba" aria-pressed="false">Změna sazby</button>
   </div>
 </div></header>
@@ -223,7 +223,6 @@ footer{font-size:.78rem;color:var(--muted);padding-block:4px 24px;text-align:cen
     </div>
     <div class="grid2">
       <label class="f" id="zasah-l">Typ činnosti (VP_A)<select id="zasah">
-        <option value="vymena">Výměna elektroměru bez dalších změn</option>
         <option value="novy">Nový odběr / OM po ukončení rezervace</option>
         <option value="zvys">Zvýšení hodnoty hlavního jističe</option>
         <option value="sniz">Snížení hodnoty hlavního jističe</option>
@@ -335,7 +334,7 @@ const TAR={
   D57d:{n:"D57d – tepelné čerpadlo (NT 20 h)",two:true,blok:["PV"],tc:true,cond:"Vytápění tepelným čerpadlem. Kompresor TČ blokován být nemusí, vodič ATC je volitelný."},
   D61d:{n:"D61d – víkendová (rekreační objekty)",two:true,nosp:true,blok:[],cond:"Víkendový režim pro rekreační objekty."}
 };
-const S={mode:"montaz",faze:"3",char:"B",jistic:25,predj:32,objekt:"rd",umisteni:"venkovni",vyska:1300,erRok:"stary",zasah:"vymena",fzm:"",em:"klasik",vyroba:"ne",vyrKw:"",vyrA:"",sazbaZ:"D02d",sazbaNa:"D25d",ean:"",adresa:"",ans:{},view:"udaje",step:0,sug:{},foto:null};
+const S={mode:"montaz",faze:"3",char:"B",jistic:25,predj:32,objekt:"rd",umisteni:"venkovni",vyska:1300,erRok:"stary",zasah:"novy",fzm:"",em:"klasik",vyroba:"ne",vyrKw:"",vyrA:"",sazbaZ:"D02d",sazbaNa:"D25d",ean:"",adresa:"",ans:{},view:"udaje",step:0,sug:{},foto:null};
 const two=()=>!!(TAR[S.sazbaNa]&&TAR[S.sazbaNa].two);
 const sp=()=>two()&&!TAR[S.sazbaNa].nosp;
 const z1T=()=>!!(TAR[S.sazbaZ]&&!TAR[S.sazbaZ].two);
@@ -523,10 +522,7 @@ function renderTop(){
   const b=[]; if(j()>80)b.push(["bad","Jistič nad 80 A: OM vyžaduje nepřímé měření s MTP. Tato pomůcka ho zatím nepokrývá."]);
   if(S.mode==="sazba"&&S.sazbaZ===S.sazbaNa)b.push(["warn","Současná a požadovaná sazba jsou stejné."]);
   {const R=REQ(),A=acts().filter(k=>VPA[k]);
-   if(A.length){const req=COLS.filter(c=>R[c]&&c!=="mtp").map(c=>COLN[c]),no=COLS.filter(c=>!R[c]&&c!=="mtp").map(c=>COLN[c]);
-    b.push(["info","Činnost: "+A.map(k=>VPA[k].n).join(" + ")+(A.length>1?" (platí přísnější požadavky)":"")+". Povinné dle VP_A: "+(req.join(", ")||"nic")+". Bez nutných úprav: "+(no.join(", ")||"nic")+"."+(R.vod&&R.tol?" Nedodržení barevného značení vodičů je tolerováno.":"")]);}
    if(spolEx())b.push(["info","Společný ER s již osazenými elektroměry: krycí maska nebrání montáži EM ani změně sazby (výjimka). Ostatní podmínky platí beze změny."]);
-   if(A.some(k=>VPA[k].mimo))b.push(["info","Prostá výměna elektroměru není v tabulce VP_A, kontrolují se proto hlavní části rozváděče."]);
    if(R.hdv||R.odb)b.push(["warn","Činnost vyžaduje i "+[R.hdv?"HDV (PP nn 2.2)":"",R.odb?"odbočky k elektroměrům (PP nn 2.3)":""].filter(Boolean).join(" a ")+" podle aktuálních PP nn."]);
    if(R.y.length)b.push(["warn","Od 1. 1. 2024 se u této činnosti vyžaduje "+[...new Set(R.y)].map(c=>c==="maska"?"ER bez masky (3.2.2)":"jističe dle PP nn (3.4.1)").join(" a ")+"."]);
    if(A.includes("porucha"))b.push(["info","Při výměně prvků při poruše musí PP nn splňovat jen měněný prvek. Ostatní body označte jako Netýká se."]);
@@ -575,7 +571,7 @@ function firstOpen(){const st=steps();const i=st.findIndex(x=>!S.ans[x.it.id]);r
 /* ---------- protocol, history ---------- */
 function protocol(){
   const e=evaluate(); const d=new Date();
-  const L=["PROTOKOL KONTROLY ODBĚRNÉHO MÍSTA","Datum: "+d.toLocaleString("cs-CZ"),"Elektroměr: "+(S.em==="amm"?"AMM":"klasický"),"Zakázka: "+(S.mode==="montaz"?"Montáž / výměna elektroměru, sazba "+S.sazbaNa:"Změna sazby "+S.sazbaZ+" → "+S.sazbaNa),"Činnost (VP_A): "+acts().filter(k=>VPA[k]).map(k=>VPA[k].n).join(" + ")+(spolEx()?" (společný ER s osazenými EM – maska tolerována)":""),
+  const L=["PROTOKOL KONTROLY ODBĚRNÉHO MÍSTA","Datum: "+d.toLocaleString("cs-CZ"),"Elektroměr: "+(S.em==="amm"?"AMM":"klasický"),"Zakázka: "+(S.mode==="montaz"?"Montáž elektroměru, sazba "+S.sazbaNa:"Změna sazby "+S.sazbaZ+" → "+S.sazbaNa),"Činnost (VP_A): "+acts().filter(k=>VPA[k]).map(k=>VPA[k].n).join(" + ")+(spolEx()?" (společný ER s osazenými EM – maska tolerována)":""),
    "EAN: "+(S.ean||"–"),"Adresa: "+(S.adresa||"–"),"Jistič: "+S.faze+"×"+(j()||"–")+" A, char. "+S.char,
    "","VÝSLEDEK: "+e.v.t.toUpperCase()];
   if(e.fails.length){L.push("","Závady:");e.fails.forEach(x=>L.push(" - "+val(x.it.q)+(x.m?" ("+x.m+")":"")+" ["+x.it.ref+"]"));}
@@ -623,7 +619,7 @@ document.addEventListener("click",ev=>{
     try{navigator.clipboard.writeText(t).then(done,fb)}catch(_){fb()} return;}
   if(b.id==="b-save"){const o=store();o.hist=[{d:new Date().toLocaleString("cs-CZ"),v:evaluate().v.t,s:JSON.parse(JSON.stringify(S))},...(o.hist||[])].slice(0,30);storeSet(o);renderHist();$("copy-msg").textContent="Uloženo do historie v tomto zařízení.";return;}
   if(b.id==="b-new"){Object.assign(S,{ean:"",adresa:"",ans:{},step:0,sug:{},foto:null});$("thumbs").innerHTML="";$("photo-status").textContent="";if(NATIVE){window.webkit.messageHandlers.newCheck.postMessage("");Object.keys(photoSlots).forEach(k=>delete photoSlots[k]);renderPhoto();}bindValues();go("udaje");return;}
-  if(b.dataset.i!==undefined&&b.closest("#hist")){const x=(store().hist||[])[+b.dataset.i];if(x){Object.assign(S,JSON.parse(JSON.stringify(x.s)));bindValues();go("vysledek");}return;}
+  if(b.dataset.i!==undefined&&b.closest("#hist")){const x=(store().hist||[])[+b.dataset.i];if(x){Object.assign(S,JSON.parse(JSON.stringify(x.s)));if(S.zasah==="vymena")S.zasah="novy";bindValues();go("vysledek");}return;}
 });
 function bindValues(){["ean","adresa","jistic","objekt","umisteni","erRok","zasah","vyroba","vyrKw","vyrA","sazbaZ","sazbaNa","fzm","em"].forEach(id=>{$(id).value=S[id]??"";});}
 
@@ -651,7 +647,7 @@ function photoRequest(){
     "Do pole polozky dávej jen body kontroly, které lze z fotky posoudit s vysokou jistotou (např. materiál desky, snímatelné kryty, krytí podle umístění, upevnění). Rozměry, výšky a průřezy vodičů z fotky neposuzuj.",
     "U položek znamená odpoved ok stav bez závady (vyhovuje PP nn) a fail závadu. Pozor: bod k4 je formulován jako zjištění masky, takže maska, snímatelný kryt, lepené plexisklo nebo fólie = fail.",
     "Pole duvod a popis piš česky, stručně (jedna věta)."].join("\n");
-  const text="Zakázka: "+(S.mode==="montaz"?"montáž / výměna elektroměru, sazba "+S.sazbaNa:"změna sazby na "+S.sazbaNa)+". Elektroměr: "+(S.em==="amm"?"AMM":"klasický")+". Typ objektu: "+S.objekt+".\n"+
+  const text="Zakázka: "+(S.mode==="montaz"?"montáž elektroměru, sazba "+S.sazbaNa:"změna sazby na "+S.sazbaNa)+". Elektroměr: "+(S.em==="amm"?"AMM":"klasický")+". Typ objektu: "+S.objekt+".\n"+
     "Dostaneš 3 fotky: celkové umístění rozváděče, detail rozváděče a detail jističů. Hodnotu a charakteristiku jističe čti hlavně z detailu jističů.\n"+
     "Body kontroly (id: text):\n"+items.map(x=>x.id+": "+x.t).join("\n")+
     "\n\nPopiš rozváděč na fotce a vyplň rozpoznané údaje.";
@@ -720,7 +716,7 @@ document.addEventListener("click",ev=>{const b=ev.target.closest("button");if(!b
 const NATIVE=!!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.share);
 if(NATIVE)$("b-copy").textContent="Uložit protokol (PDF)";
 fillTariffs();
-const saved=store().cur; if(saved&&typeof saved==="object")Object.assign(S,saved);
+const saved=store().cur; if(saved&&typeof saved==="object")Object.assign(S,saved); if(S.zasah==="vymena")S.zasah="novy";
 else{ /* ukázkový stav: rozpracovaná kontrola */ S.adresa="Ukázka – Lipová 12, Kolín"; }
 bindInputs(); renderAll(); renderHist(); renderPhoto(); if(NATIVE){window.webkit.messageHandlers.hasKey.postMessage("");window.webkit.messageHandlers.listPhotos.postMessage("");}
 })();
