@@ -175,7 +175,7 @@ footer{font-size:.78rem;color:var(--muted);padding-block:4px 24px;text-align:cen
 </style>
 
 <header class="top"><div class="wrap">
-  <div class="brand"><div class="brand-l"><img id="logo" src="logo.png" alt="Logo" hidden onload="this.hidden=false"><h1>Kontrola OM</h1></div><small>Připojovací podmínky nn<br>platnost od 1. 9. 2025</small></div>
+  <div class="brand"><h1>Kontrola OM</h1><img id="logo" src="logo.png" alt="Logo" hidden onload="this.hidden=false"></div>
   <div class="modes" role="group" aria-label="Typ zakázky">
     <button id="m-montaz" data-mode="montaz" aria-pressed="true">Montáž / výměna EM</button>
     <button id="m-sazba" data-mode="sazba" aria-pressed="false">Změna sazby</button>
@@ -220,7 +220,23 @@ footer{font-size:.78rem;color:var(--muted);padding-block:4px 24px;text-align:cen
       <label class="f">Rozváděč vyroben<select id="erRok"><option value="stary">do 31. 12. 2025</option><option value="novy">od 1. 1. 2026</option></select></label>
     </div>
     <div class="grid2">
-      <label class="f">Rozsah zásahu<select id="zasah"><option value="vymena">Výměna EM ve stávajícím OM</option><option value="nove">Nové nebo rekonstruované OM</option></select></label>
+      <label class="f" id="zasah-l">Typ činnosti (VP_A)<select id="zasah">
+        <option value="vymena">Výměna elektroměru bez dalších změn</option>
+        <option value="novy">Nový odběr / OM po ukončení rezervace</option>
+        <option value="zvys">Zvýšení hodnoty hlavního jističe</option>
+        <option value="sniz">Snížení hodnoty hlavního jističe</option>
+        <option value="f13">Změna počtu fází z 1F na 3F</option>
+        <option value="f31">Změna počtu fází z 3F na 1F</option>
+        <option value="porucha">Výměna prvků při poruše</option>
+        <option value="pn">Změna měření z přímého na nepřímé</option>
+        <option value="np">Změna měření z nepřímého na přímé</option>
+        <option value="rer">Rekonstrukce nebo výměna ER</option>
+        <option value="rhdv">Rekonstrukce (výměna) HDV nebo odboček</option>
+        <option value="vyr1">Nová výrobna bez vazby na stávající OM</option>
+        <option value="vyr2">Nová výrobna / mikrozdroj s vazbou na OM</option>
+        <option value="vyr3">Rekonstrukce / navýšení výkonu výrobny</option>
+        <option value="prub">Změna měření z neprůběhového na průběhové</option>
+      </select></label>
       <label class="f">Výrobna / FVE / baterie<select id="vyroba"><option value="ne">Ne</option><option value="ano">Ano</option></select></label>
     </div>
     <div class="grid2" id="vyroba-box" hidden>
@@ -230,6 +246,7 @@ footer{font-size:.78rem;color:var(--muted);padding-block:4px 24px;text-align:cen
     <div id="sazba-box" class="grid2" hidden>
       <label class="f">Současná sazba<select id="sazbaZ"></select></label>
       <label class="f">Požadovaná sazba<select id="sazbaNa"></select></label>
+      <label class="f">Změna počtu fází<select id="fzm"><option value="">Beze změny</option><option value="f13">Současně z 1F na 3F</option><option value="f31">Současně z 3F na 1F</option></select></label>
     </div>
     <div id="calc" class="calc" aria-live="polite"></div>
     <div id="banners" style="display:flex;flex-direction:column;gap:8px"></div>
@@ -290,7 +307,7 @@ footer{font-size:.78rem;color:var(--muted);padding-block:4px 24px;text-align:cen
     <p class="hint">Pomůcka nenahrazuje PP nn ani cenové rozhodnutí ERÚ. Podmínky nároku na sazbu ověřte v aktuálním cenovém rozhodnutí. Nepřímé měření (nad 80 A), část 3.6–3.9 a kapitola 4 (výrobny) jsou zatím pokryty jen orientačně.</p>
   </section>
   </div>
-  <footer>Prototyp pro montéry · data se ukládají jen v tomto zařízení</footer>
+  <footer>Podle Připojovacích podmínek nn ČEZ Distribuce (platnost od 1. 9. 2025) a tabulky závaznosti VP_A<br>Data se ukládají jen v tomto zařízení</footer>
 </main>
 
 <div class="bar"><div class="wrap">
@@ -316,59 +333,105 @@ const TAR={
   D57d:{n:"D57d – tepelné čerpadlo (NT 20 h)",two:true,blok:["PV"],tc:true,cond:"Vytápění tepelným čerpadlem. Kompresor TČ blokován být nemusí, vodič ATC je volitelný."},
   D61d:{n:"D61d – víkendová (rekreační objekty)",two:true,blok:[],cond:"Víkendový režim pro rekreační objekty."}
 };
-const S={mode:"montaz",faze:"3",char:"B",jistic:25,predj:32,objekt:"rd",umisteni:"venkovni",vyska:1300,erRok:"stary",zasah:"vymena",vyroba:"ne",vyrKw:"",vyrA:"",sazbaZ:"D02d",sazbaNa:"D25d",ean:"",adresa:"",ans:{},view:"udaje",step:0,sug:{},foto:null};
+const S={mode:"montaz",faze:"3",char:"B",jistic:25,predj:32,objekt:"rd",umisteni:"venkovni",vyska:1300,erRok:"stary",zasah:"vymena",fzm:"",vyroba:"ne",vyrKw:"",vyrA:"",sazbaZ:"D02d",sazbaNa:"D25d",ean:"",adresa:"",ans:{},view:"udaje",step:0,sug:{},foto:null};
 const two=()=>S.mode==="sazba"&&TAR[S.sazbaNa]&&TAR[S.sazbaNa].two;
 const tarOk=()=>S.mode==="sazba";
 const j=()=>Number(S.jistic)||0;
 
 /* ---------- checks ---------- */
+/* Tabulka závaznosti VP_A: které části PP nn jsou pro činnost povinné (1) a které bez nutných úprav (0).
+   Sloupce: rev=revizní zpráva, hdv=HDV 2.2, odb=odbočky 2.3, um=umístění ER 3.1, maska=ER bez masky 3.2.2,
+   konstr=konstrukce a provedení (3.2.1, 3.4, 3.4.3, 3.5.1, 3.6.2, 3.9), jist=jističe 3.4.1, vod=vodiče (3.4.2, 3.5.2, 3.6.3),
+   mtp=MTP 3.6.1, vyp=vypínací prvek u výrobny 3.4.4, sch=zapojení dle schémat VP_01. tol=nedodržení barev vodičů tolerováno,
+   y=žlutě zvýrazněné (vyžadováno od 1. 1. 2024). */
+const COLS=["rev","hdv","odb","um","maska","konstr","jist","vod","mtp","vyp","sch"];
+const COLN={rev:"revizní zpráva",hdv:"HDV",odb:"odbočky k elektroměrům",um:"umístění ER",maska:"ER bez masky",konstr:"konstrukce a provedení ER",jist:"jističe",vod:"vodiče",mtp:"MTP",vyp:"vypínací prvek u výrobny",sch:"zapojení dle schémat"};
+const VPA={
+  novy:{n:"Nový odběr / OM po ukončení rezervace",r:[1,1,1,1,1,1,1,1,1,0,1]},
+  zvys:{n:"Zvýšení hodnoty hlavního jističe",r:[1,1,1,0,0,1,1,1,1,1,0],tol:1},
+  sniz:{n:"Snížení hodnoty hlavního jističe",r:[0,0,0,0,0,1,1,0,1,1,0]},
+  porucha:{n:"Výměna prvků při poruše",r:[0,0,0,0,0,1,1,1,0,0,0]},
+  f13:{n:"Změna počtu fází z 1F na 3F",r:[1,1,1,0,1,1,1,1,0,1,1],y:"maska"},
+  f31:{n:"Změna počtu fází z 3F na 1F",r:[1,1,1,0,1,1,1,1,0,1,1],tol:1,y:"maska"},
+  t12:{n:"Změna sazby z jednotarifní na dvoutarifní",r:[1,1,1,0,1,1,1,1,0,1,1],tol:1,y:"maska"},
+  t21:{n:"Změna sazby z dvoutarifní na jednotarifní",r:[0,0,0,0,0,1,1,0,0,0,0],y:"jist"},
+  t22:{n:"Změna sazby z dvoutarifní na jinou dvoutarifní",r:[1,1,1,0,0,1,1,0,0,1,1]},
+  t11:{n:"Změna jednotarifní sazby",r:[0,0,0,0,0,1,1,0,0,0,0]},
+  pn:{n:"Změna měření z přímého na nepřímé",r:[1,1,1,1,1,1,1,1,1,0,1]},
+  np:{n:"Změna měření z nepřímého na přímé",r:[1,0,0,1,1,1,1,1,0,1,1]},
+  rer:{n:"Rekonstrukce nebo výměna ER",r:[1,0,0,1,1,1,1,1,1,1,1]},
+  rhdv:{n:"Rekonstrukce (výměna) HDV nebo odboček",r:[1,1,1,0,0,0,0,0,0,0,0]},
+  vyr1:{n:"Nová výrobna bez vazby na stávající OM",r:[1,1,1,1,1,1,1,1,1,1,1]},
+  vyr2:{n:"Nová výrobna / mikrozdroj s vazbou na OM",r:[1,1,0,0,1,1,1,1,1,1,1],tol:1},
+  vyr3:{n:"Rekonstrukce / navýšení výkonu výrobny",r:[1,1,0,0,1,1,1,1,1,1,1],tol:1},
+  prub:{n:"Změna měření z neprůběhového na průběhové",r:[0,0,0,0,1,1,1,0,0,0,1]},
+  vymena:{n:"Výměna elektroměru bez dalších změn",r:[0,0,0,1,1,1,1,1,0,0,1],mimo:1}
+};
+function acts(){
+  if(S.mode==="montaz")return [S.zasah];
+  const a=[]; const z=TAR[S.sazbaZ],n=TAR[S.sazbaNa];
+  if(z&&n){ if(!z.two&&n.two)a.push("t12"); else if(z.two&&!n.two)a.push("t21"); else if(z.two&&n.two)a.push("t22"); else a.push("t11"); }
+  if(S.fzm)a.push(S.fzm);
+  return a;
+}
+function REQ(){
+  const out={tol:true,y:[]}; let anyVod=false;
+  COLS.forEach(c=>out[c]=false);
+  acts().forEach(k=>{const v=VPA[k];if(!v)return;COLS.forEach((c,i)=>{if(v.r[i])out[c]=true;});
+    if(v.r[7]){anyVod=true;if(!v.tol)out.tol=false;} if(v.y)out.y.push(v.y);});
+  if(!anyVod)out.tol=false;
+  return out;
+}
 const SECS=[
+ {id:"doklady",t:"Doklady",items:[
+  {id:"rv1",q:"Revizní zpráva (nebo potvrzení o jejím vydání) je k dispozici",col:"rev",ref:"VP_A"}
+ ]},
  {id:"pristup",t:"Umístění a přístup k ER",items:[
-  {id:"p1",q:"ER je trvale přístupný pracovníkům PDS",ref:"PP nn 3.1"},
-  {id:"p2",q:"Před ER volný prostor min. 800 mm do hloubky i šířky, rovná plocha",ref:"PP nn 3.1"},
-  {id:"p3",q:"Dvířka lze otevřít min. o 90°",ref:"PP nn 3.1"},
-  {id:"p5",q:"ER je na hranici pozemku nebo na obvodové zdi, dvířka z veřejně přístupné strany",when:()=>S.objekt==="rd"&&S.zasah==="nove",ref:"PP nn 3.1"},
-  {id:"p6",q:"ER je na chodbě, podestě nebo v energocentru",when:()=>S.objekt==="bd"&&S.zasah==="nove",ref:"PP nn 3.1"},
-  {id:"p7",q:"Společný ER u místa připojení, přístupný z veřejného prostranství",when:()=>S.objekt==="chata"&&S.zasah==="nove",ref:"PP nn 3.1"},
+  {id:"p1",col:"um",q:"ER je trvale přístupný pracovníkům PDS",ref:"PP nn 3.1"},
+  {id:"p2",col:"um",q:"Před ER volný prostor min. 800 mm do hloubky i šířky, rovná plocha",ref:"PP nn 3.1"},
+  {id:"p3",col:"um",q:"Dvířka lze otevřít min. o 90°",ref:"PP nn 3.1"},
+  {id:"p5",q:"ER je na hranici pozemku nebo na obvodové zdi, dvířka z veřejně přístupné strany",col:"um",when:()=>S.objekt==="rd",ref:"PP nn 3.1"},
+  {id:"p6",q:"ER je na chodbě, podestě nebo v energocentru",col:"um",when:()=>S.objekt==="bd",ref:"PP nn 3.1"},
+  {id:"p7",q:"Společný ER u místa připojení, přístupný z veřejného prostranství",col:"um",when:()=>S.objekt==="chata",ref:"PP nn 3.1"},
  ]},
  {id:"konstr",t:"Konstrukce rozváděče",items:[
-  {id:"k1",q:"Typově zkoušený ER s prohlášením o shodě a značkou CE, zkratová odolnost min. 10 kA",ref:"PP nn 3.2.1"},
-  {id:"k2",q:"Krytí odpovídá umístění",d:()=>"Otevřené dveře min. IP20. Zavřené: "+({vnitrni:"IP 2XC (vnitřní)",venkovni:"IP 43 (venkovní)",komunikace:"IP 44 (venkovní u komunikace)"})[S.umisteni]+".",ref:"PP nn 3.2.1"},
-  {id:"k3",q:"Přístrojová deska není dřevěná, pertinaxová ani gumonová",d:"Takovou desku je nutné vyměnit.",ref:"PP nn 3.2.1"},
-  {id:"k4",q:"Bez snímatelných krytů (masek), bez lepeného plexiskla a fólie",d:"Masky jen u stávajícího společného ER s fakturačním EM nebo u dočasného ER. Okénka min. 160×120 mm (3f) / 100×100 mm (1f).",ref:"PP nn 3.2.1"},
-  {id:"k7",q:"Kabelový prostor oddělen pevnou nebo plombovatelnou přepážkou",ref:"PP nn 3.2.2"},
-  {id:"k9",q:"Více OM v jednom ER: označení a schéma zapojení",when:()=>S.objekt==="bd"||S.objekt==="chata",ref:"PP nn 3.2.1"}
+  {id:"k1",col:"konstr",q:"Typově zkoušený ER s prohlášením o shodě a značkou CE, zkratová odolnost min. 10 kA",ref:"PP nn 3.2.1"},
+  {id:"k2",col:"konstr",q:"Krytí odpovídá umístění",d:()=>"Otevřené dveře min. IP20. Zavřené: "+({vnitrni:"IP 2XC (vnitřní)",venkovni:"IP 43 (venkovní)",komunikace:"IP 44 (venkovní u komunikace)"})[S.umisteni]+".",ref:"PP nn 3.2.1"},
+  {id:"k3",col:"konstr",q:"Přístrojová deska není dřevěná, pertinaxová ani gumonová",d:"Takovou desku je nutné vyměnit.",ref:"PP nn 3.2.1"},
+  {id:"k4",col:"maska",q:"Bez snímatelných krytů (masek), bez lepeného plexiskla a fólie",d:"Masky jen u stávajícího společného ER s fakturačním EM nebo u dočasného ER. Okénka min. 160×120 mm (3f) / 100×100 mm (1f).",ref:"PP nn 3.2.1"},
+  {id:"k7",col:"konstr",q:"Kabelový prostor oddělen pevnou nebo plombovatelnou přepážkou",ref:"PP nn 3.2.2"},
+  {id:"k9",col:"konstr",q:"Více OM v jednom ER: označení a schéma zapojení",when:()=>S.objekt==="bd"||S.objekt==="chata",ref:"PP nn 3.2.1"}
  ]},
  {id:"vysky",t:"Prostor pro přístroje",items:[
-  {id:"v4",q:"Spodní hrana venkovního ER min. 600 mm nad terénem",when:()=>S.umisteni!=="vnitrni",ref:"PP nn tab. 1"},
-  {id:"v5",q:()=>"Volný prostor pro elektroměr min. "+(S.faze==="1"&&S.erRok==="stary"?"180×300×160 mm":"200×400×160 mm")+" (š×v×h)",d:()=>S.faze==="1"?"Jednofázový EM: ER do 31. 12. 2025 min. 180×300×160, od 1. 1. 2026 min. 200×400×160.":"Třífázový EM.",ref:"PP nn tab. 2"},
-  {id:"v6",q:"Prostor pro spínací prvek / komunikační jednotku min. 180×300×160 mm",ref:"PP nn tab. 2"},
+  {id:"v4",col:"um",q:"Spodní hrana venkovního ER min. 600 mm nad terénem",when:()=>S.umisteni!=="vnitrni",ref:"PP nn tab. 1"},
+  {id:"v5",col:"konstr",q:()=>"Volný prostor pro elektroměr min. "+(S.faze==="1"&&S.erRok==="stary"?"180×300×160 mm":"200×400×160 mm")+" (š×v×h)",d:()=>S.faze==="1"?"Jednofázový EM: ER do 31. 12. 2025 min. 180×300×160, od 1. 1. 2026 min. 200×400×160.":"Třífázový EM.",ref:"PP nn tab. 2"},
+  {id:"v6",col:"konstr",q:"Prostor pro spínací prvek / komunikační jednotku min. 180×300×160 mm",ref:"PP nn tab. 2"},
  ]},
  {id:"hj",t:"Hlavní jistič před elektroměrem",items:[
   {id:"j1",q:"Jmenovitý proud v řadě PDS",autoOnly:true,auto:()=>{if(!j())return null;return SER_J.includes(j())?["ok",j()+" A je v normalizované řadě"]:["fail",j()+" A není v řadě "+SER_J.slice(0,11).join(", ")+" …"]},ref:"PP nn 3.4.1"},
   {id:"j2",q:"Jednofázový jistič max. 25 A",autoOnly:true,when:()=>S.faze==="1",auto:()=>{if(!j())return null;return j()<=25?["ok","1f, "+j()+" A ≤ 25 A"]:["fail","1f s jističem "+j()+" A nelze, max. 25 A, nutné 3f připojení"]},ref:"PP nn 3.4.1"},
   {id:"j3",q:"Přímé měření (jistič do 80 A včetně)",autoOnly:true,auto:()=>{if(!j())return null;return j()<=80?["ok","Přímé měření"]:["fail","Nad 80 A nepřímé měření s MTP, řešit dle PP nn 3.6 a schémat 4/5"]},ref:"PP nn 3.5.1"},
   {id:"j4",q:"Charakteristika B",autoOnly:true,auto:()=>S.char==="B"?["ok","Charakteristika B"]:["warn","Charakteristika "+S.char+" jen s kladným stanoviskem PDS"],ref:"PP nn 3.4.1"},
-  {id:"j5",q:()=>"Doloženo kladné stanovisko PDS k charakteristice "+S.char,when:()=>S.char!=="B",ref:"PP nn 3.4.1"},
-  {id:"j6",q:()=>"Počet pólů jističe odpovídá počtu fází ("+S.faze+"f), 3p jistič bez možnosti ovládat póly samostatně",ref:"PP nn 3.4.1"},
-  {id:"j7",q:"Zkratová odolnost min. 10 kA, hodnota, charakteristika a vypínací schopnost zřetelně a nezáměnně označeny",ref:"PP nn 3.4.1"},
-  {id:"j8",q:"Jistič bez dálkového ovládání a bez signalizačního kontaktu",ref:"PP nn 3.4.1"},
-  {id:"j9",q:"Montáž svisle, páčka nahoru = zapnuto, jistič plombovatelný",ref:"PP nn 3.4.1"},
-  {id:"j10",q:"Hodnota jističe odpovídá rezervovanému příkonu ve smlouvě / žádosti",ref:"PP nn 1.2, 3.4.1"}
+  {id:"j5",col:"jist",q:()=>"Doloženo kladné stanovisko PDS k charakteristice "+S.char,when:()=>S.char!=="B",ref:"PP nn 3.4.1"},
+  {id:"j6",col:"jist",q:()=>"Počet pólů jističe odpovídá počtu fází ("+S.faze+"f), 3p jistič bez možnosti ovládat póly samostatně",ref:"PP nn 3.4.1"},
+  {id:"j7",col:"jist",q:"Zkratová odolnost min. 10 kA, hodnota, charakteristika a vypínací schopnost zřetelně a nezáměnně označeny",ref:"PP nn 3.4.1"},
+  {id:"j8",col:"jist",q:"Jistič bez dálkového ovládání a bez signalizačního kontaktu",ref:"PP nn 3.4.1"},
+  {id:"j9",col:"jist",q:"Montáž svisle, páčka nahoru = zapnuto, jistič plombovatelný",ref:"PP nn 3.4.1"},
+  {id:"j10",col:"jist",q:"Hodnota jističe odpovídá rezervovanému příkonu ve smlouvě / žádosti",ref:"PP nn 1.2, 3.4.1"}
  ]},
  {id:"vodice",t:"Vodiče a zapojení",items:[
-  {id:"w2",q:"Lanovaná zakončení s lisovanými dutinkami (ne cínovaná), silové dutinky s izolačním límcem min. 18 mm",ref:"PP nn 3.4.2"},
-  {id:"w4",q:"Přívodní a vývodní fázové vodiče měřeného OM mají stejný průřez",ref:"PP nn 3.5.2"},
-  {id:"w5",q:"Správný sled fází L1, L2, L3",when:()=>S.faze==="3",ref:"PP nn 3.2"},
-  {id:"w6",q:"Barvy vodičů: L1 hnědá, L2 černá, L3 šedá, N světle modrá, PEN zelenožlutá",ref:"VP_01 schéma 1/2"},
-  {id:"w8",q:"Stávající Al vývod jen od vypínače instalace nebo vývodové svorkovnice",rec:true,ref:"PP nn 3.4.2"},
+  {id:"w2",col:"vod",q:"Lanovaná zakončení s lisovanými dutinkami (ne cínovaná), silové dutinky s izolačním límcem min. 18 mm",ref:"PP nn 3.4.2"},
+  {id:"w4",col:"vod",q:"Přívodní a vývodní fázové vodiče měřeného OM mají stejný průřez",ref:"PP nn 3.5.2"},
+  {id:"w5",col:"vod",q:"Správný sled fází L1, L2, L3",when:()=>S.faze==="3",ref:"PP nn 3.2"},
+  {id:"w6",col:"vod",get rec(){return REQ().tol},q:"Barvy vodičů: L1 hnědá, L2 černá, L3 šedá, N světle modrá, PEN zelenožlutá",ref:"VP_01 schéma 1/2"},
+  {id:"w8",col:"vod",q:"Stávající Al vývod jen od vypínače instalace nebo vývodové svorkovnice",rec:true,ref:"PP nn 3.4.2"},
  ]},
- {id:"vyp",t:"Vypínač instalace",when:()=>S.zasah==="nove",items:[
+ {id:"vyp",t:"Vypínač instalace",when:()=>REQ().konstr,items:[
   {id:"x1",q:"Za elektroměrem je vypínač instalace, který galvanicky odpojí instalaci zákazníka",ref:"PP nn 3.4.3"},
   {id:"x2",q:()=>"Jmenovitý proud vypínače min. "+(j()||"–")+" A (hodnota HJ), označení „Vypínač instalace“",ref:"PP nn 3.4.3"},
   {id:"x3",q:"Mezi EM a vypínačem není žádný přístroj zákazníka, páčka svisle nahoru = zapnuto",ref:"PP nn 3.4.3"}
  ]},
- {id:"sazba",t:"Tarif, HDO a blokování",when:()=>two()||S.vyroba==="ano",items:[
+ {id:"sazba",t:"Tarif, HDO a blokování",when:()=>(two()||S.vyroba==="ano")&&REQ().sch,items:[
   {id:"t0",q:"Nárok na sazbu",autoOnly:true,when:()=>two(),auto:()=>["warn",TAR[S.sazbaNa].cond+" Ověřte v cenovém rozhodnutí ERÚ."],ref:"Cenové rozhodnutí ERÚ"},
   {id:"t1",q:"Spotřebiče pro sazbu jsou instalované a zapojené přes blokovací stykač",when:()=>two()&&TAR[S.sazbaNa].blok.length>0,d:()=>"Požadované blokované okruhy: "+TAR[S.sazbaNa].blok.join(", ")+(TAR[S.sazbaNa].tc?". Kompresor TČ blokován být nemusí.":"."),ref:"VP_B, ERÚ"},
   {id:"t2",q:"Samostatný spínací prvek (HDO přijímač, spínací hodiny nebo ŘJ) pro toto OM",d:"Společné ovládání blokování pro více OM je při změně sazby nutné rozdělit.",when:()=>two(),ref:"VP_B, PP nn 3.4"},
@@ -382,6 +445,7 @@ const SECS=[
   {id:"y1",q:"Režim připojení výrobny",autoOnly:true,auto:()=>{const kw=Number(S.vyrKw),a=Number(S.vyrA);if(!kw||!a)return null;
      return(kw<=10.8&&a<=16)?["ok","Mikrozdroj ("+kw+" kW, "+a+" A/f), zjednodušené připojení"]:["warn",kw+" kW / "+a+" A/f nad limit mikrozdroje (10,8 kW, 16 A/f), nutná smlouva o připojení dle kap. 4"]},ref:"PP nn 1.2"},
   {id:"y2",q:"Doloženo oznámení / smlouva o připojení výrobny",ref:"PP nn 1.2, kap. 4"},
+  {id:"y4",col:"vyp",q:"Na výstupu z ER je doplněn vypínací prvek (OM se stávající výrobnou, přímé zapojení)",ref:"PP nn 3.4.4"},
   {id:"y3",q:"TOTAL/CENTRAL STOP: mechanický, uzamykatelný, označený vypínač, tlačítka ne na dvířkách ER",rec:true,ref:"PP nn 2.6"}
  ]}
 ];
@@ -391,7 +455,7 @@ const val=(x)=>typeof x==="function"?x():x;
 function visibleItems(){
   const out=[];
   SECS.forEach(sec=>{ if(sec.when&&!sec.when())return;
-    const its=sec.items.filter(it=>!it.when||it.when());
+    const R=REQ();const its=sec.items.filter(it=>(!it.col||R[it.col])&&(!it.when||it.when()));
     if(its.length) out.push({sec,its}); });
   return out;
 }
@@ -445,11 +509,20 @@ function renderTop(){
   document.querySelectorAll(".modes button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.mode===S.mode));
   document.querySelectorAll("#faze button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.v===S.faze));
   document.querySelectorAll("#char button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.v===S.char));
-  $("sazba-box").hidden=S.mode!=="sazba"; $("vyroba-box").hidden=S.vyroba!=="ano";
+  $("sazba-box").hidden=S.mode!=="sazba"; $("zasah-l").hidden=S.mode==="sazba"; $("vyroba-box").hidden=S.vyroba!=="ano";
   const c=[]; if(j()){c.push("Rezervovaný příkon: "+S.faze+"×"+j()+" A ≈ "+(S.faze==="3"?(j()*0.4*Math.sqrt(3)).toFixed(1):(j()*0.23).toFixed(1))+" kW")}
   $("calc").innerHTML=c.map(esc).join("<br>"); $("calc").hidden=!c.length;
   const b=[]; if(j()>80)b.push(["bad","Jistič nad 80 A: OM vyžaduje nepřímé měření s MTP. Tato pomůcka ho zatím nepokrývá."]);
   if(S.mode==="sazba"&&S.sazbaZ===S.sazbaNa)b.push(["warn","Současná a požadovaná sazba jsou stejné."]);
+  {const R=REQ(),A=acts().filter(k=>VPA[k]);
+   if(A.length){const req=COLS.filter(c=>R[c]&&c!=="mtp").map(c=>COLN[c]),no=COLS.filter(c=>!R[c]&&c!=="mtp").map(c=>COLN[c]);
+    b.push(["info","Činnost: "+A.map(k=>VPA[k].n).join(" + ")+(A.length>1?" (platí přísnější požadavky)":"")+". Povinné dle VP_A: "+(req.join(", ")||"nic")+". Bez nutných úprav: "+(no.join(", ")||"nic")+"."+(R.vod&&R.tol?" Nedodržení barevného značení vodičů je tolerováno.":"")]);}
+   if(A.some(k=>VPA[k].mimo))b.push(["info","Prostá výměna elektroměru není v tabulce VP_A, kontrolují se proto hlavní části rozváděče."]);
+   if(R.hdv||R.odb)b.push(["warn","Činnost vyžaduje i "+[R.hdv?"HDV (PP nn 2.2)":"",R.odb?"odbočky k elektroměrům (PP nn 2.3)":""].filter(Boolean).join(" a ")+" podle aktuálních PP nn."]);
+   if(R.y.length)b.push(["warn","Od 1. 1. 2024 se u této činnosti vyžaduje "+[...new Set(R.y)].map(c=>c==="maska"?"ER bez masky (3.2.2)":"jističe dle PP nn (3.4.1)").join(" a ")+"."]);
+   if(A.includes("porucha"))b.push(["info","Při výměně prvků při poruše musí PP nn splňovat jen měněný prvek. Ostatní body označte jako Netýká se."]);
+   if(S.mode==="sazba"&&S.fzm==="f13"&&S.faze!=="3")b.push(["warn","Změna na 3F: nastavte nahoře Počet fází na 3f (cílový stav)."]);
+   if(S.mode==="sazba"&&S.fzm==="f31"&&S.faze!=="1")b.push(["warn","Změna na 1F: nastavte nahoře Počet fází na 1f (cílový stav)."]);}
   if(S.mode==="sazba"&&TAR[S.sazbaZ]&&!TAR[S.sazbaZ].two&&two())b.push(["info","Přechod z jednotarifu na dvoutarif: je nutný spínací prvek, blokování a dvoutarifový EM."]);
   $("banners").innerHTML=b.map(x=>'<div class="banner '+x[0]+'">'+esc(x[1])+'</div>').join("");
 }
@@ -492,7 +565,7 @@ function firstOpen(){const st=steps();const i=st.findIndex(x=>!S.ans[x.it.id]);r
 /* ---------- protocol, history ---------- */
 function protocol(){
   const e=evaluate(); const d=new Date();
-  const L=["PROTOKOL KONTROLY ODBĚRNÉHO MÍSTA","Datum: "+d.toLocaleString("cs-CZ"),"Zakázka: "+(S.mode==="montaz"?"Montáž / výměna elektroměru":"Změna sazby "+S.sazbaZ+" → "+S.sazbaNa),
+  const L=["PROTOKOL KONTROLY ODBĚRNÉHO MÍSTA","Datum: "+d.toLocaleString("cs-CZ"),"Zakázka: "+(S.mode==="montaz"?"Montáž / výměna elektroměru":"Změna sazby "+S.sazbaZ+" → "+S.sazbaNa),"Činnost (VP_A): "+acts().filter(k=>VPA[k]).map(k=>VPA[k].n).join(" + "),
    "EAN: "+(S.ean||"–"),"Adresa: "+(S.adresa||"–"),"Jistič: "+S.faze+"×"+(j()||"–")+" A, char. "+S.char,
    "","VÝSLEDEK: "+e.v.t.toUpperCase()];
   if(e.fails.length){L.push("","Závady:");e.fails.forEach(x=>L.push(" - "+val(x.it.q)+(x.m?" ("+x.m+")":"")+" ["+x.it.ref+"]"));}
@@ -512,8 +585,8 @@ function renderHist(){const h=(store().hist||[]);const box=$("hist");
 
 /* ---------- events ---------- */
 function bindInputs(){
-  ["ean","adresa","jistic","objekt","umisteni","erRok","zasah","vyroba","vyrKw","vyrA","sazbaZ","sazbaNa"].forEach(id=>{
-    const el=$(id); el.value=S[id]; el.addEventListener(el.tagName==="SELECT"?"change":"input",()=>{S[id]=el.value;renderAll();});
+  ["ean","adresa","jistic","objekt","umisteni","erRok","zasah","vyroba","vyrKw","vyrA","sazbaZ","sazbaNa","fzm"].forEach(id=>{
+    const el=$(id); el.value=S[id]; el.addEventListener(el.tagName==="SELECT"?"change":"input",()=>{S[id]=el.value;if(id==="fzm"&&el.value)S.faze=el.value==="f13"?"3":"1";if(id==="zasah"&&(el.value==="f13"||el.value==="f31"))S.faze=el.value==="f13"?"3":"1";renderAll();});
   });
 }
 function fillTariffs(){const o=Object.entries(TAR).map(([k,t])=>'<option value="'+k+'">'+esc(t.n)+'</option>').join("");$("sazbaZ").innerHTML=o;$("sazbaNa").innerHTML=o;}
@@ -542,7 +615,7 @@ document.addEventListener("click",ev=>{
   if(b.id==="b-new"){Object.assign(S,{ean:"",adresa:"",ans:{},step:0,sug:{},foto:null});$("thumbs").innerHTML="";$("photo-status").textContent="";if(NATIVE){window.webkit.messageHandlers.newCheck.postMessage("");Object.keys(photoSlots).forEach(k=>delete photoSlots[k]);renderPhoto();}bindValues();go("udaje");return;}
   if(b.dataset.i!==undefined&&b.closest("#hist")){const x=(store().hist||[])[+b.dataset.i];if(x){Object.assign(S,JSON.parse(JSON.stringify(x.s)));bindValues();go("vysledek");}return;}
 });
-function bindValues(){["ean","adresa","jistic","objekt","umisteni","erRok","zasah","vyroba","vyrKw","vyrA","sazbaZ","sazbaNa"].forEach(id=>{$(id).value=S[id]??"";});}
+function bindValues(){["ean","adresa","jistic","objekt","umisteni","erRok","zasah","vyroba","vyrKw","vyrA","sazbaZ","sazbaNa","fzm"].forEach(id=>{$(id).value=S[id]??"";});}
 
 /* ---------- fotka rozváděče ---------- */
 const LBL={faze:{"1":"1f","3":"3f"},umisteni:{vnitrni:"vnitřní",venkovni:"venkovní"},typ_elektromeru:{elektronicky:"elektronický",indukcni:"indukční (starý)"},
