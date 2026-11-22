@@ -1,6 +1,4 @@
 <!doctype html><html lang="cs"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Kontrola OM">
-<link rel="apple-touch-icon" href="icon-180.png"><link rel="icon" href="icon-192.png">
 <style>:root{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}body{margin:0;font:14px system-ui}img{max-width:100%}[hidden]{display:none!important}</style>
 <title>Kontrola odběrného místa</title>
 <meta name="claude:viewport-fit-sides" content="cover">
@@ -28,6 +26,7 @@
   --ok:#5fd08e; --ok-bg:#16301f; --bad:#ff8a80; --bad-bg:#3a1a18; --warn:#f2b85a; --warn-bg:#3a2a10; color-scheme:dark }
 
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:16px;line-height:1.45;padding-bottom:96px}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--accent)}
 .wrap{max-width:720px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
@@ -104,6 +103,24 @@ textarea{width:100%;min-height:160px;font:500 .8rem var(--f-mono);color:var(--fg
 .pill.ok{background:var(--ok-bg);color:var(--ok)} .pill.bad{background:var(--bad-bg);color:var(--bad)} .pill.warn{background:var(--warn-bg);color:var(--warn)} .pill.open{background:var(--surface-2);color:var(--muted)}
 .bar .stat{flex:1;min-width:0;font-family:var(--f-mono);font-size:.8rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .bar .btn{min-height:40px;padding:8px 14px}
+.start{min-height:58px;font-size:1.1rem;width:100%}
+.wiz{display:flex;flex-direction:column;gap:14px}
+.wiz-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.wiz-sec{font-family:var(--f-display);font-weight:700;font-size:1.05rem;text-transform:uppercase;letter-spacing:.05em;color:var(--accent);min-width:0}
+.wiz-num{font-family:var(--f-mono);font-size:.85rem;color:var(--muted);white-space:nowrap}
+.prog{height:6px;border-radius:99px;background:var(--surface-2);overflow:hidden}
+.prog>i{display:block;height:100%;background:var(--accent);transition:width .2s}
+.wiz-card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px 16px;display:flex;flex-direction:column;gap:12px;min-height:180px}
+.wiz-q{font-size:1.3rem;font-weight:600;line-height:1.3;margin:0;text-wrap:balance}
+.wiz-ans{display:grid;gap:10px}
+.wiz-ans button{min-height:62px;border-radius:12px;border:2px solid var(--line);background:var(--surface);color:var(--fg);font:600 1.15rem var(--f-body);cursor:pointer}
+.wiz-ans .a-ok{border-color:var(--ok);color:var(--ok)} .wiz-ans .a-fail{border-color:var(--bad);color:var(--bad)}
+.wiz-ans .a-ok[aria-pressed="true"]{background:var(--ok);color:var(--surface)}
+.wiz-ans .a-fail[aria-pressed="true"]{background:var(--bad);color:var(--surface)}
+.wiz-ans .a-na[aria-pressed="true"]{background:var(--muted);border-color:var(--muted);color:var(--surface)}
+.wiz-nav{display:flex;justify-content:space-between;gap:8px}
+.wiz-nav .btn{flex:1}
+.list-head{display:flex;justify-content:space-between;align-items:center;gap:10px}
 footer{font-size:.8rem;color:var(--muted);padding-block:8px 24px}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
@@ -117,6 +134,7 @@ footer{font-size:.8rem;color:var(--muted);padding-block:8px 24px}
 </div></header>
 
 <main class="wrap">
+ <div id="v-udaje" style="display:flex;flex-direction:column;gap:18px">
   <section class="card" aria-labelledby="h-om">
     <h2 id="h-om">Odběrné místo</h2>
     <div class="grid2">
@@ -155,24 +173,37 @@ footer{font-size:.8rem;color:var(--muted);padding-block:8px 24px}
     </div>
     <div id="calc" class="calc" aria-live="polite"></div>
     <div id="banners" style="display:flex;flex-direction:column;gap:8px"></div>
+    <button class="btn start" id="b-start">Zahájit kontrolu</button>
   </section>
+ </div>
 
-  <div id="sections" style="display:flex;flex-direction:column;gap:12px"></div>
+  <section class="wiz" id="v-pruvodce" hidden aria-live="polite"></section>
 
-  <section class="card verdict" id="vysledek" aria-labelledby="h-v">
+  <div id="v-seznam" hidden style="display:flex;flex-direction:column;gap:12px">
+    <div class="list-head"><h2>Všechny body</h2><button class="btn ghost" id="b-back-res">Hotovo</button></div>
+    <div id="sections" style="display:flex;flex-direction:column;gap:12px"></div>
+  </div>
+
+  <section class="card verdict" id="vysledek" hidden aria-labelledby="h-v">
     <h2 id="h-v">Výsledek</h2>
     <p class="vbig" id="vbig"></p>
     <p class="hint" id="vsub"></p>
     <ul class="faults" id="faults"></ul>
     <div class="actions">
-      <button class="btn" id="b-copy">Sdílet protokol</button>
+      <button class="btn" id="b-copy">Kopírovat protokol</button>
       <button class="btn ghost" id="b-save">Uložit do historie</button>
       <button class="btn ghost" id="b-new">Nová kontrola</button>
+    </div>
+    <div class="actions">
+      <button class="btn ghost" id="b-resume">Projít průvodce</button>
+      <button class="btn ghost" id="b-list">Upravit odpovědi</button>
+      <button class="btn ghost" id="b-udaje">Údaje OM</button>
     </div>
     <p class="hint" id="copy-msg" aria-live="polite"></p>
     <textarea id="proto" readonly hidden aria-label="Text protokolu"></textarea>
   </section>
 
+  <div id="v-info" style="display:flex;flex-direction:column;gap:18px">
   <section class="card" aria-labelledby="h-h">
     <h2 id="h-h">Historie v tomto zařízení</h2>
     <div class="hist" id="hist"></div>
@@ -190,6 +221,7 @@ footer{font-size:.8rem;color:var(--muted);padding-block:8px 24px}
     </ul>
     <p class="hint">Pomůcka nenahrazuje PP nn ani cenové rozhodnutí ERÚ. Podmínky nároku na sazbu ověřte v aktuálním cenovém rozhodnutí. Nepřímé měření (nad 80 A), část 3.6–3.9 a kapitola 4 (výrobny) jsou zatím pokryty jen orientačně.</p>
   </section>
+  </div>
   <footer>Prototyp pro montéry · data se ukládají jen v tomto zařízení</footer>
 </main>
 
@@ -216,7 +248,7 @@ const TAR={
   D57d:{n:"D57d – tepelné čerpadlo (NT 20 h)",two:true,blok:["PV"],tc:true,cond:"Vytápění tepelným čerpadlem. Kompresor TČ blokován být nemusí, vodič ATC je volitelný."},
   D61d:{n:"D61d – víkendová (rekreační objekty)",two:true,blok:[],cond:"Víkendový režim pro rekreační objekty."}
 };
-const S={mode:"montaz",faze:"3",char:"B",jistic:25,predj:32,objekt:"rd",umisteni:"venkovni",vyska:1300,erRok:"stary",zasah:"vymena",vyroba:"ne",vyrKw:"",vyrA:"",sazbaZ:"D02d",sazbaNa:"D25d",ean:"",adresa:"",ans:{}};
+const S={mode:"montaz",faze:"3",char:"B",jistic:25,predj:32,objekt:"rd",umisteni:"venkovni",vyska:1300,erRok:"stary",zasah:"vymena",vyroba:"ne",vyrKw:"",vyrA:"",sazbaZ:"D02d",sazbaNa:"D25d",ean:"",adresa:"",ans:{},view:"udaje",step:0};
 const two=()=>S.mode==="sazba"&&TAR[S.sazbaNa]&&TAR[S.sazbaNa].two;
 const tarOk=()=>S.mode==="sazba";
 const j=()=>Number(S.jistic)||0;
@@ -323,7 +355,7 @@ function renderSections(){
   const box=$("sections"); box.innerHTML="";
   visibleItems().forEach(({sec,its})=>{
     let f=0,d=0,req=0; its.forEach(it=>{const r=status(it); if(r.s!==null)d++; if(r.s==="fail")f++; });
-    const det=document.createElement("details"); det.className="sec"; det.id="sec-"+sec.id; if(openSecs.has(sec.id))det.open=true;
+    const det=document.createElement("details"); det.className="sec"; det.id="sec-"+sec.id; det.open=true;
     det.addEventListener("toggle",()=>{det.open?openSecs.add(sec.id):openSecs.delete(sec.id)});
     const cls=f?"bad":(d===its.length?"done":"");
     det.innerHTML='<summary><span class="sec-title">'+esc(sec.t)+'</span><span class="sec-count '+cls+'">'+(f?f+" závad · ":"")+d+"/"+its.length+'</span><svg class="chev" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="2"/></svg></summary>';
@@ -358,12 +390,37 @@ function renderVerdict(){
   const e=evaluate();
   $("vbig").className="vbig v-"+e.v.k; $("vbig").textContent=e.v.t;
   $("vsub").textContent=e.open?("Zbývá vyplnit "+e.open+" povinných bodů z "+e.total+"."):("Zkontrolováno "+e.done+" z "+e.total+" bodů.");
-  $("faults").innerHTML=[...e.fails.map(x=>["Závada",x]),...e.warns.map(x=>["Výhrada",x])].map(([k,x])=>'<li><strong>'+k+':</strong> '+esc(val(x.it.q))+(x.m?" – "+esc(x.m):"")+'<span class="ref">'+esc(x.it.ref)+'</span></li>').join("");
+  $("faults").innerHTML=[...e.fails.map(x=>["Závada",x]),...e.warns.map(x=>["Výhrada",x])].map(([k,x])=>'<li><strong>'+k+':</strong> '+esc(val(x.it.q))+(x.m?" – "+esc(x.m):"")+'<span class="ref">'+esc(x.it.ref)+'</span>'+(x.it.autoOnly?'':'<button class="btn ghost" style="min-height:36px;padding:4px 12px;margin-top:4px" data-jump="'+x.it.id+'">Změnit odpověď</button>')+'</li>').join("");
   const p=$("pill"); p.className="pill "+e.v.k; p.textContent=e.v.k==="bad"?"Nepřipraveno":e.v.k==="ok"?"Připraveno":e.v.k==="warn"?"S výhradou":"Rozpracováno";
   $("stat").textContent=e.done+"/"+e.total+" bodů · "+e.fails.length+" závad · "+e.warns.length+" výhrad";
   return e;
 }
-function renderAll(){renderTop();renderSections();renderVerdict();persist();}
+function steps(){const out=[];visibleItems().forEach(({sec,its})=>its.forEach(it=>{if(!it.autoOnly)out.push({sec,it})}));return out;}
+function renderWizard(){
+  const st=steps(); const box=$("v-pruvodce");
+  if(!st.length){box.innerHTML="";return;}
+  if(S.step>=st.length)S.step=st.length-1; if(S.step<0)S.step=0;
+  const {sec,it}=st[S.step]; const a=S.ans[it.id]||"";
+  const answered=st.filter(x=>S.ans[x.it.id]).length;
+  box.innerHTML='<div class="wiz-head"><span class="wiz-sec">'+esc(sec.t)+'</span><span class="wiz-num">Bod '+(S.step+1)+' z '+st.length+'</span></div>'+
+   '<div class="prog" aria-hidden="true"><i style="width:'+Math.round(answered/st.length*100)+'%"></i></div>'+
+   '<div class="wiz-card"><p class="wiz-q">'+esc(val(it.q))+(it.rec?'<span class="rec" style="font-size:.7rem;font-weight:500;color:var(--muted);border:1px solid var(--line);border-radius:4px;padding:0 5px;margin-left:6px;vertical-align:3px;text-transform:uppercase">doporučeno</span>':'')+'</p>'+
+   (it.d?'<p class="d">'+esc(val(it.d))+'</p>':'')+'<span class="ref">'+esc(it.ref)+'</span></div>'+
+   '<div class="wiz-ans" role="group" aria-label="Odpověď">'+
+   '<button class="a-ok" data-w="ok" aria-pressed="'+(a==="ok")+'">Vyhovuje</button>'+
+   '<button class="a-fail" data-w="fail" aria-pressed="'+(a==="fail")+'">Závada</button>'+
+   '<button class="a-na" data-w="na" aria-pressed="'+(a==="na")+'">Netýká se</button></div>'+
+   '<div class="wiz-nav"><button class="btn ghost" id="w-prev"'+(S.step===0?' disabled':'')+'>Zpět</button><button class="btn ghost" id="w-next">'+(S.step===st.length-1?'Výsledek':'Přeskočit')+'</button></div>';
+}
+function setView(v){S.view=v;
+  $("v-udaje").hidden=v!=="udaje"; $("v-info").hidden=v!=="udaje";
+  $("v-pruvodce").hidden=v!=="pruvodce"; $("v-seznam").hidden=v!=="seznam"; $("vysledek").hidden=v!=="vysledek";
+  document.querySelector(".modes").hidden=v!=="udaje";
+  $("b-go").textContent=v==="udaje"?"Zahájit":v==="vysledek"?"Údaje OM":"Výsledek";
+}
+function renderAll(){renderTop();setView(S.view);if(S.view==="seznam")renderSections();if(S.view==="pruvodce")renderWizard();renderVerdict();persist();}
+function go(v){S.view=v;renderAll();window.scrollTo(0,0);}
+function firstOpen(){const st=steps();const i=st.findIndex(x=>!S.ans[x.it.id]);return i<0?0:i;}
 
 /* ---------- protocol, history ---------- */
 function protocol(){
@@ -398,21 +455,33 @@ document.addEventListener("click",ev=>{
   if(b.parentElement.id==="faze"){S.faze=b.dataset.v;renderAll();return;}
   if(b.parentElement.id==="char"){S.char=b.dataset.v;renderAll();return;}
   if(b.dataset.id){const id=b.dataset.id;S.ans[id]=S.ans[id]===b.dataset.a?undefined:b.dataset.a;const y=window.scrollY;renderAll();window.scrollTo(0,y);return;}
-  if(b.id==="b-go"){$("vysledek").scrollIntoView({behavior:"smooth"});return;}
-  if(b.id==="b-copy"){const t=protocol();if(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.share){window.webkit.messageHandlers.share.postMessage(t);return;}const ta=$("proto");ta.value=t;ta.hidden=false;
+  if(b.dataset.w){const st=steps();const it=st[S.step].it;S.ans[it.id]=b.dataset.w;renderWizard();renderVerdict();persist();
+    setTimeout(()=>{if(S.step<st.length-1){S.step++;renderAll();}else go("vysledek");},220);return;}
+  if(b.dataset.jump){const i=steps().findIndex(x=>x.it.id===b.dataset.jump);if(i>=0){S.step=i;go("pruvodce");}return;}
+  if(b.id==="w-prev"){S.step--;renderAll();return;}
+  if(b.id==="w-next"){const st=steps();if(S.step<st.length-1){S.step++;renderAll();}else go("vysledek");return;}
+  if(b.id==="b-start"||(b.id==="b-go"&&S.view==="udaje")){S.step=firstOpen();go("pruvodce");return;}
+  if(b.id==="b-go"){go(S.view==="vysledek"?"udaje":"vysledek");return;}
+  if(b.id==="b-resume"){S.step=firstOpen();go("pruvodce");return;}
+  if(b.id==="b-list"){go("seznam");return;}
+  if(b.id==="b-back-res"){go("vysledek");return;}
+  if(b.id==="b-udaje"){go("udaje");return;}
+  if(b.id==="b-copy"){const t=protocol();if(NATIVE){window.webkit.messageHandlers.share.postMessage(t);return;}const ta=$("proto");ta.value=t;ta.hidden=false;
     const done=()=>{$("copy-msg").textContent="Protokol zkopírován do schránky."};
     const fb=()=>{ta.focus();ta.select();$("copy-msg").textContent="Text je označený, zkopírujte ho ručně.";};
     try{navigator.clipboard.writeText(t).then(done,fb)}catch(_){fb()} return;}
   if(b.id==="b-save"){const o=store();o.hist=[{d:new Date().toLocaleString("cs-CZ"),v:evaluate().v.t,s:JSON.parse(JSON.stringify(S))},...(o.hist||[])].slice(0,30);storeSet(o);renderHist();$("copy-msg").textContent="Uloženo do historie v tomto zařízení.";return;}
-  if(b.id==="b-new"){Object.assign(S,{ean:"",adresa:"",ans:{}});bindValues();renderAll();window.scrollTo(0,0);return;}
-  if(b.dataset.i!==undefined&&b.closest("#hist")){const x=(store().hist||[])[+b.dataset.i];if(x){Object.assign(S,JSON.parse(JSON.stringify(x.s)));bindValues();renderAll();window.scrollTo(0,0);}return;}
+  if(b.id==="b-new"){Object.assign(S,{ean:"",adresa:"",ans:{},step:0});bindValues();go("udaje");return;}
+  if(b.dataset.i!==undefined&&b.closest("#hist")){const x=(store().hist||[])[+b.dataset.i];if(x){Object.assign(S,JSON.parse(JSON.stringify(x.s)));bindValues();go("vysledek");}return;}
 });
 function bindValues(){["ean","adresa","jistic","objekt","umisteni","erRok","zasah","vyroba","vyrKw","vyrA","sazbaZ","sazbaNa"].forEach(id=>{$(id).value=S[id]??"";});}
 
 /* ---------- boot ---------- */
+const NATIVE=!!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.share);
+if(NATIVE)$("b-copy").textContent="Sdílet protokol";
 fillTariffs();
 const saved=store().cur; if(saved&&typeof saved==="object")Object.assign(S,saved);
-else{ /* ukázkový stav: rozpracovaná kontrola */ S.ans={p1:"ok",p2:"ok",p3:"fail"}; S.adresa="Ukázka – Lipová 12, Kolín"; }
+else{ /* ukázkový stav: rozpracovaná kontrola */ S.adresa="Ukázka – Lipová 12, Kolín"; }
 bindInputs(); renderAll(); renderHist();
 })();
 </script>
