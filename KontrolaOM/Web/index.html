@@ -218,7 +218,6 @@ footer{font-size:.78rem;color:var(--muted);padding-block:4px 24px;text-align:cen
     </div>
     <div class="grid2">
       <label class="f">Rozváděč vyroben<select id="erRok"><option value="stary">do 31. 12. 2025</option><option value="novy">od 1. 1. 2026</option></select></label>
-      <label class="f">Společný ER pro více elektroměrů<select id="spol"><option value="">Ne</option><option value="ano">Ano, některé EM jsou již osazeny</option></select></label>
     </div>
     <div class="grid2">
       <label class="f" id="zasah-l">Typ činnosti (VP_A)<select id="zasah">
@@ -334,7 +333,7 @@ const TAR={
   D57d:{n:"D57d – tepelné čerpadlo (NT 20 h)",two:true,blok:["PV"],tc:true,cond:"Vytápění tepelným čerpadlem. Kompresor TČ blokován být nemusí, vodič ATC je volitelný."},
   D61d:{n:"D61d – víkendová (rekreační objekty)",two:true,blok:[],cond:"Víkendový režim pro rekreační objekty."}
 };
-const S={mode:"montaz",faze:"3",char:"B",jistic:25,predj:32,objekt:"rd",umisteni:"venkovni",vyska:1300,erRok:"stary",zasah:"vymena",fzm:"",spol:"",vyroba:"ne",vyrKw:"",vyrA:"",sazbaZ:"D02d",sazbaNa:"D25d",ean:"",adresa:"",ans:{},view:"udaje",step:0,sug:{},foto:null};
+const S={mode:"montaz",faze:"3",char:"B",jistic:25,predj:32,objekt:"rd",umisteni:"venkovni",vyska:1300,erRok:"stary",zasah:"vymena",fzm:"",vyroba:"ne",vyrKw:"",vyrA:"",sazbaZ:"D02d",sazbaNa:"D25d",ean:"",adresa:"",ans:{},view:"udaje",step:0,sug:{},foto:null};
 const two=()=>S.mode==="sazba"&&TAR[S.sazbaNa]&&TAR[S.sazbaNa].two;
 const tarOk=()=>S.mode==="sazba";
 const j=()=>Number(S.jistic)||0;
@@ -375,14 +374,13 @@ function acts(){
   if(S.fzm)a.push(S.fzm);
   return a;
 }
-function spolEx(){return S.spol==="ano";}
+function spolEx(){return S.ans.k4==="fail"&&S.ans.k4s==="ok";}
 function REQ(){
   const out={tol:true,y:[]}; let anyVod=false;
   COLS.forEach(c=>out[c]=false);
   acts().forEach(k=>{const v=VPA[k];if(!v)return;COLS.forEach((c,i)=>{if(v.r[i])out[c]=true;});
     if(v.r[7]){anyVod=true;if(!v.tol)out.tol=false;} if(v.y)out.y.push(v.y);});
   if(!anyVod)out.tol=false;
-  if(spolEx()){out.maska=false;out.y=out.y.filter(c=>c!=="maska");}
   return out;
 }
 const SECS=[
@@ -402,6 +400,7 @@ const SECS=[
   {id:"k2",col:"konstr",q:"Krytí odpovídá umístění",d:()=>"Otevřené dveře min. IP20. Zavřené: "+({vnitrni:"IP 2XC (vnitřní)",venkovni:"IP 43 (venkovní)",komunikace:"IP 44 (venkovní u komunikace)"})[S.umisteni]+".",ref:"PP nn 3.2.1"},
   {id:"k3",col:"konstr",q:"Přístrojová deska není dřevěná, pertinaxová ani gumonová",d:"Takovou desku je nutné vyměnit.",ref:"PP nn 3.2.1"},
   {id:"k4",col:"maska",q:"Bez snímatelných krytů (masek), bez lepeného plexiskla a fólie",d:"Masky jen u stávajícího společného ER s fakturačním EM nebo u dočasného ER. Okénka min. 160×120 mm (3f) / 100×100 mm (1f).",ref:"PP nn 3.2.1"},
+  {id:"k4s",col:"maska",q:"Jde o společný ER pro více elektroměrů, ve kterém jsou některé EM již osazeny?",d:"Pokud ano, maska je tolerována a nebrání montáži EM ani změně sazby. Ostatní podmínky platí.",lab:["Ano, společný ER","Ne"],neutral:true,when:()=>S.ans.k4==="fail",ref:"PP nn 3.2.1"},
   {id:"k7",col:"konstr",q:"Kabelový prostor oddělen pevnou nebo plombovatelnou přepážkou",ref:"PP nn 3.2.2"},
   {id:"k9",col:"konstr",q:"Více OM v jednom ER: označení a schéma zapojení",when:()=>S.objekt==="bd"||S.objekt==="chata",ref:"PP nn 3.2.1"}
  ]},
@@ -465,6 +464,8 @@ function visibleItems(){
 function status(it){
   if(it.auto){const r=it.auto(); if(r){ if(it.autoOnly) return {s:r[0],m:r[1],auto:true}; }}
   const a=S.ans[it.id];
+  if(it.id==="k4"&&spolEx())return{s:"ok"};
+  if(it.neutral)return a==="ok"?{s:"ok"}:a?{s:"na"}:{s:null};
   if(a==="ok")return{s:"ok"}; if(a==="fail")return{s:it.rec?"warn":"fail"}; if(a==="na")return{s:"na"};
   return{s:null};
 }
@@ -501,7 +502,7 @@ function renderSections(){
       if(it.d)h+='<p class="d">'+esc(val(it.d))+'</p>';
       if(it.autoOnly){ h+= r.s? '<div class="auto '+r.s+'">'+esc(r.m)+'</div>' : '<div class="auto" style="background:var(--surface-2);color:var(--muted)">Doplňte údaje nahoře</div>'; }
       else{ const a=S.ans[it.id]||"";
-        h+='<div class="ans" role="group" aria-label="Odpověď"><button class="a-ok" data-id="'+it.id+'" data-a="ok" aria-pressed="'+(a==="ok")+'">Vyhovuje</button><button class="a-fail" data-id="'+it.id+'" data-a="fail" aria-pressed="'+(a==="fail")+'">Závada</button><button class="a-na" data-id="'+it.id+'" data-a="na" aria-pressed="'+(a==="na")+'">Netýká se</button></div>'; }
+        h+='<div class="ans" role="group" aria-label="Odpověď"><button class="a-ok" data-id="'+it.id+'" data-a="ok" aria-pressed="'+(a==="ok")+'">'+(it.lab?it.lab[0]:"Vyhovuje")+'</button><button class="a-fail" data-id="'+it.id+'" data-a="fail" aria-pressed="'+(a==="fail")+'">'+(it.lab?it.lab[1]:"Závada")+'</button><button class="a-na" data-id="'+it.id+'" data-a="na" aria-pressed="'+(a==="na")+'">Netýká se</button></div>'; }
       h+='<span class="ref">'+esc(it.ref)+'</span>';
       el.innerHTML=h; list.appendChild(el);
     });
@@ -551,8 +552,8 @@ function renderWizard(){
    '<div class="wiz-card"><p class="wiz-q">'+esc(val(it.q))+(it.rec?'<span class="rec" style="font-size:.68rem;font-weight:600;color:var(--accent);background:var(--accent-2);border-radius:6px;padding:2px 6px;margin-left:6px;vertical-align:4px;text-transform:uppercase">doporučeno</span>':'')+'</p>'+
    (it.d?'<p class="d">'+esc(val(it.d))+'</p>':'')+(S.sug&&S.sug[it.id]?'<p class="sugnote">Předvyplněno z fotky: '+esc(S.sug[it.id])+' Zkontrolujte a potvrďte.</p>':'')+'<span class="ref">'+esc(it.ref)+'</span></div>'+
    '<div class="wiz-ans" role="group" aria-label="Odpověď">'+
-   '<button class="a-ok" data-w="ok" aria-pressed="'+(a==="ok")+'">Vyhovuje</button>'+
-   '<button class="a-fail" data-w="fail" aria-pressed="'+(a==="fail")+'">Závada</button>'+
+   '<button class="a-ok" data-w="ok" aria-pressed="'+(a==="ok")+'">'+(it.lab?it.lab[0]:"Vyhovuje")+'</button>'+
+   '<button class="a-fail" data-w="fail" aria-pressed="'+(a==="fail")+'">'+(it.lab?it.lab[1]:"Závada")+'</button>'+
    '<button class="a-na" data-w="na" aria-pressed="'+(a==="na")+'">Netýká se</button></div>'+
    '<div class="wiz-nav"><button class="btn ghost" id="w-prev"'+(S.step===0?' disabled':'')+'>Zpět</button><button class="btn ghost" id="w-next">'+(S.step===st.length-1?'Výsledek':'Přeskočit')+'</button></div>';
 }
@@ -589,7 +590,7 @@ function renderHist(){const h=(store().hist||[]);const box=$("hist");
 
 /* ---------- events ---------- */
 function bindInputs(){
-  ["ean","adresa","jistic","objekt","umisteni","erRok","zasah","vyroba","vyrKw","vyrA","sazbaZ","sazbaNa","fzm","spol"].forEach(id=>{
+  ["ean","adresa","jistic","objekt","umisteni","erRok","zasah","vyroba","vyrKw","vyrA","sazbaZ","sazbaNa","fzm"].forEach(id=>{
     const el=$(id); el.value=S[id]; el.addEventListener(el.tagName==="SELECT"?"change":"input",()=>{S[id]=el.value;if(id==="fzm"&&el.value)S.faze=el.value==="f13"?"3":"1";if(id==="zasah"&&(el.value==="f13"||el.value==="f31"))S.faze=el.value==="f13"?"3":"1";renderAll();});
   });
 }
@@ -619,7 +620,7 @@ document.addEventListener("click",ev=>{
   if(b.id==="b-new"){Object.assign(S,{ean:"",adresa:"",ans:{},step:0,sug:{},foto:null});$("thumbs").innerHTML="";$("photo-status").textContent="";if(NATIVE){window.webkit.messageHandlers.newCheck.postMessage("");Object.keys(photoSlots).forEach(k=>delete photoSlots[k]);renderPhoto();}bindValues();go("udaje");return;}
   if(b.dataset.i!==undefined&&b.closest("#hist")){const x=(store().hist||[])[+b.dataset.i];if(x){Object.assign(S,JSON.parse(JSON.stringify(x.s)));bindValues();go("vysledek");}return;}
 });
-function bindValues(){["ean","adresa","jistic","objekt","umisteni","erRok","zasah","vyroba","vyrKw","vyrA","sazbaZ","sazbaNa","fzm","spol"].forEach(id=>{$(id).value=S[id]??"";});}
+function bindValues(){["ean","adresa","jistic","objekt","umisteni","erRok","zasah","vyroba","vyrKw","vyrA","sazbaZ","sazbaNa","fzm"].forEach(id=>{$(id).value=S[id]??"";});}
 
 /* ---------- fotka rozváděče ---------- */
 const LBL={faze:{"1":"1f","3":"3f"},umisteni:{vnitrni:"vnitřní",venkovni:"venkovní"},typ_elektromeru:{elektronicky:"elektronický",indukcni:"indukční (starý)"},
