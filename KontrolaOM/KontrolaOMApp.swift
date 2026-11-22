@@ -8,7 +8,7 @@ struct KontrolaOMApp: App {
         WindowGroup {
             WebView()
                 .ignoresSafeArea(.container, edges: .bottom)
-                .background(Color(red: 0.114, green: 0.31, blue: 0.451))
+                .background(Color(UIColor.systemGroupedBackground))
         }
     }
 }

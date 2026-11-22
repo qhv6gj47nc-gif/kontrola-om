@@ -16,15 +16,15 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: cz.monter.kontrolaom
-        MARKETING_VERSION: "1.3"
-        CURRENT_PROJECT_VERSION: "4"
+        MARKETING_VERSION: "1.4"
+        CURRENT_PROJECT_VERSION: "5"
         TARGETED_DEVICE_FAMILY: "1"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_CFBundleDisplayName: "Kontrola OM"
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UISupportedInterfaceOrientations: UIInterfaceOrientationPortrait
-        INFOPLIST_KEY_UIStatusBarStyle: UIStatusBarStyleLightContent
+        INFOPLIST_KEY_UIStatusBarStyle: UIStatusBarStyleDefault
         INFOPLIST_KEY_UIViewControllerBasedStatusBarAppearance: NO
         INFOPLIST_KEY_NSCameraUsageDescription: "Fotka rozváděče slouží k rozpoznání přístrojů a předvyplnění kontroly."
         INFOPLIST_KEY_NSPhotoLibraryUsageDescription: "Výběr fotky rozváděče k rozpoznání přístrojů."
