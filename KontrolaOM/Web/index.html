@@ -219,6 +219,7 @@ footer{font-size:.78rem;color:var(--muted);padding-block:4px 24px;text-align:cen
     </div>
     <div class="grid2">
       <label class="f">Rozváděč vyroben<select id="erRok"><option value="stary">do 31. 12. 2025</option><option value="novy">od 1. 1. 2026</option></select></label>
+      <label class="f">Elektroměr<select id="em"><option value="klasik">Klasický</option><option value="amm">AMM (chytrý)</option></select></label>
     </div>
     <div class="grid2">
       <label class="f" id="zasah-l">Typ činnosti (VP_A)<select id="zasah">
@@ -327,15 +328,16 @@ const TAR={
   D02d:{n:"D02d – jednotarifová",two:false},
   D25d:{n:"D25d – akumulační ohřev vody (NT 8 h)",two:true,blok:["TUV"],cond:"Akumulační ohřev teplé vody s blokováním ohřívače."},
   D26d:{n:"D26d – akumulační vytápění (NT 8 h)",two:true,blok:["AKU","TUV"],cond:"Akumulační (příp. hybridní) elektrické vytápění s blokováním."},
-  D27d:{n:"D27d – nabíjení elektromobilu (NT 8 h)",two:true,blok:["EMO"],cond:"Nabíjecí stanice elektromobilu s blokováním nabíjení."},
+  D27d:{n:"D27d – nabíjení elektromobilu (NT 8 h)",two:true,nosp:true,blok:["EMO"],cond:"Nabíjecí stanice elektromobilu s blokováním nabíjení."},
   D35d:{n:"D35d – hybridní vytápění (NT 16 h)",two:true,blok:["PV"],cond:"Hybridní vytápění (el. zdroj v kombinaci s jiným zdrojem) s blokováním."},
   D45d:{n:"D45d – přímotopné vytápění (NT 20 h)",two:true,blok:["PV","TUV"],cond:"Přímotopné elektrické vytápění s blokováním."},
   D56d:{n:"D56d – vytápění tepelným čerpadlem (NT 22 h)",two:true,blok:["PV"],tc:true,cond:"Vytápění tepelným čerpadlem. Kompresor TČ blokován být nemusí, vodič ATC je volitelný."},
   D57d:{n:"D57d – tepelné čerpadlo (NT 20 h)",two:true,blok:["PV"],tc:true,cond:"Vytápění tepelným čerpadlem. Kompresor TČ blokován být nemusí, vodič ATC je volitelný."},
-  D61d:{n:"D61d – víkendová (rekreační objekty)",two:true,blok:[],cond:"Víkendový režim pro rekreační objekty."}
+  D61d:{n:"D61d – víkendová (rekreační objekty)",two:true,nosp:true,blok:[],cond:"Víkendový režim pro rekreační objekty."}
 };
-const S={mode:"montaz",faze:"3",char:"B",jistic:25,predj:32,objekt:"rd",umisteni:"venkovni",vyska:1300,erRok:"stary",zasah:"vymena",fzm:"",vyroba:"ne",vyrKw:"",vyrA:"",sazbaZ:"D02d",sazbaNa:"D25d",ean:"",adresa:"",ans:{},view:"udaje",step:0,sug:{},foto:null};
+const S={mode:"montaz",faze:"3",char:"B",jistic:25,predj:32,objekt:"rd",umisteni:"venkovni",vyska:1300,erRok:"stary",zasah:"vymena",fzm:"",em:"klasik",vyroba:"ne",vyrKw:"",vyrA:"",sazbaZ:"D02d",sazbaNa:"D25d",ean:"",adresa:"",ans:{},view:"udaje",step:0,sug:{},foto:null};
 const two=()=>!!(TAR[S.sazbaNa]&&TAR[S.sazbaNa].two);
+const sp=()=>two()&&!TAR[S.sazbaNa].nosp;
 const z1T=()=>!!(TAR[S.sazbaZ]&&!TAR[S.sazbaZ].two);
 const tarOk=()=>S.mode==="sazba";
 const j=()=>Number(S.jistic)||0;
@@ -409,7 +411,7 @@ const SECS=[
  {id:"vysky",t:"Prostor pro přístroje",items:[
   {id:"v4",col:"um",q:"Spodní hrana venkovního ER min. 600 mm nad terénem",when:()=>S.umisteni!=="vnitrni",ref:"PP nn tab. 1"},
   {id:"v5",col:"konstr",q:()=>"Volný prostor pro elektroměr min. "+(S.faze==="1"&&S.erRok==="stary"?"180×300×160 mm":"200×400×160 mm")+" (š×v×h)",d:()=>S.faze==="1"?"Jednofázový EM: ER do 31. 12. 2025 min. 180×300×160, od 1. 1. 2026 min. 200×400×160.":"Třífázový EM.",ref:"PP nn tab. 2"},
-  {id:"v6",col:"konstr",q:"Prostor pro spínací prvek / komunikační jednotku min. 180×300×160 mm",when:()=>S.mode==="montaz"?two():z1T()&&two(),ref:"PP nn tab. 2"},
+  {id:"v6",col:"konstr",q:"Prostor pro spínací prvek / komunikační jednotku min. 180×300×160 mm",when:()=>S.mode==="montaz"?sp():z1T()&&sp(),ref:"PP nn tab. 2"},
  ]},
  {id:"hj",t:"Hlavní jistič před elektroměrem",items:[
   {id:"j1",q:"Jmenovitý proud v řadě PDS",autoOnly:true,auto:()=>{if(!j())return null;return SER_J.includes(j())?["ok",j()+" A je v normalizované řadě"]:["fail",j()+" A není v řadě "+SER_J.slice(0,11).join(", ")+" …"]},ref:"PP nn 3.4.1"},
@@ -438,9 +440,9 @@ const SECS=[
  {id:"sazba",t:"Tarif, HDO a blokování",when:()=>(two()||S.vyroba==="ano")&&REQ().sch,items:[
   {id:"t0",q:"Nárok na sazbu",autoOnly:true,when:()=>two(),auto:()=>["warn",TAR[S.sazbaNa].cond+" Ověřte v cenovém rozhodnutí ERÚ."],ref:"Cenové rozhodnutí ERÚ"},
   {id:"t1",q:"Spotřebiče pro sazbu jsou instalované a zapojené přes blokovací stykač",when:()=>two()&&TAR[S.sazbaNa].blok.length>0,d:()=>"Požadované blokované okruhy: "+TAR[S.sazbaNa].blok.join(", ")+(TAR[S.sazbaNa].tc?". Kompresor TČ blokován být nemusí.":"."),ref:"VP_B, ERÚ"},
-  {id:"t2",q:"Samostatný spínací prvek (HDO přijímač, spínací hodiny nebo ŘJ) pro toto OM",d:"Společné ovládání blokování pro více OM je při změně sazby nutné rozdělit.",when:()=>two(),ref:"VP_B, PP nn 3.4"},
-  {id:"t3",q:"Jistič spínacího prvku 2–6 A, char. B nebo C, min. 10 kA, svisle",ref:"PP nn 3.4.1"},
-  {id:"t4",q:"Tarif ani blokování nejsou ovládány ze spínacího prvku v jiném ER",ref:"PP nn 3.4"},
+  {id:"t2",q:"Samostatný spínací prvek (HDO přijímač, spínací hodiny nebo ŘJ) pro toto OM",d:"Společné ovládání blokování pro více OM je při změně sazby nutné rozdělit.",when:()=>sp(),ref:"VP_B, PP nn 3.4"},
+  {id:"t3",q:"Jistič spínacího prvku 2–6 A, char. B nebo C, min. 10 kA, svisle",when:()=>sp()||!two(),ref:"PP nn 3.4.1"},
+  {id:"t4",q:"Tarif ani blokování nejsou ovládány ze spínacího prvku v jiném ER",when:()=>sp()||!two(),ref:"PP nn 3.4"},
   {id:"t6",q:"AKU a TUV mají dva samostatné stykače",when:()=>two()&&TAR[S.sazbaNa].blok.includes("AKU"),ref:"VP_B"},
   {id:"t8",q:()=>"Vodiče označeny dle tab. 3 PP nn: TAR"+(two()?", "+TAR[S.sazbaNa].blok.join(", "):"")+(S.vyroba==="ano"?", N 0 %":""),ref:"PP nn tab. 3"},
   {id:"t9",q:"Výrobna s omezováním výkonu zapojena dle schématu 2 (vodič N 0 %)",when:()=>S.vyroba==="ano",ref:"VP_01 schéma 2"}
@@ -530,7 +532,8 @@ function renderTop(){
    if(A.includes("porucha"))b.push(["info","Při výměně prvků při poruše musí PP nn splňovat jen měněný prvek. Ostatní body označte jako Netýká se."]);
    if(S.mode==="sazba"&&S.fzm==="f13"&&S.faze!=="3")b.push(["warn","Změna na 3F: nastavte nahoře Počet fází na 3f (cílový stav)."]);
    if(S.mode==="sazba"&&S.fzm==="f31"&&S.faze!=="1")b.push(["warn","Změna na 1F: nastavte nahoře Počet fází na 1f (cílový stav)."]);}
-  if(S.mode==="sazba"&&TAR[S.sazbaZ]&&!TAR[S.sazbaZ].two&&two())b.push(["info","Přechod z jednotarifu na dvoutarif: je nutný spínací prvek, blokování a dvoutarifový EM."]);
+  if(S.mode==="sazba"&&TAR[S.sazbaZ]&&!TAR[S.sazbaZ].two&&two())b.push(["info",sp()?"Přechod z jednotarifu na dvoutarif: je nutný spínací prvek, blokování a dvoutarifový EM.":"Přechod z jednotarifu na dvoutarif: je nutný dvoutarifový EM."]);
+  if(two()&&!sp())b.push(["info","Sazba "+S.sazbaNa+": spínací prvek není nutné osazovat."]);
   $("banners").innerHTML=b.map(x=>'<div class="banner '+x[0]+'">'+esc(x[1])+'</div>').join("");
 }
 function renderVerdict(){
@@ -572,7 +575,7 @@ function firstOpen(){const st=steps();const i=st.findIndex(x=>!S.ans[x.it.id]);r
 /* ---------- protocol, history ---------- */
 function protocol(){
   const e=evaluate(); const d=new Date();
-  const L=["PROTOKOL KONTROLY ODBĚRNÉHO MÍSTA","Datum: "+d.toLocaleString("cs-CZ"),"Zakázka: "+(S.mode==="montaz"?"Montáž / výměna elektroměru, sazba "+S.sazbaNa:"Změna sazby "+S.sazbaZ+" → "+S.sazbaNa),"Činnost (VP_A): "+acts().filter(k=>VPA[k]).map(k=>VPA[k].n).join(" + ")+(spolEx()?" (společný ER s osazenými EM – maska tolerována)":""),
+  const L=["PROTOKOL KONTROLY ODBĚRNÉHO MÍSTA","Datum: "+d.toLocaleString("cs-CZ"),"Elektroměr: "+(S.em==="amm"?"AMM":"klasický"),"Zakázka: "+(S.mode==="montaz"?"Montáž / výměna elektroměru, sazba "+S.sazbaNa:"Změna sazby "+S.sazbaZ+" → "+S.sazbaNa),"Činnost (VP_A): "+acts().filter(k=>VPA[k]).map(k=>VPA[k].n).join(" + ")+(spolEx()?" (společný ER s osazenými EM – maska tolerována)":""),
    "EAN: "+(S.ean||"–"),"Adresa: "+(S.adresa||"–"),"Jistič: "+S.faze+"×"+(j()||"–")+" A, char. "+S.char,
    "","VÝSLEDEK: "+e.v.t.toUpperCase()];
   if(e.fails.length){L.push("","Závady:");e.fails.forEach(x=>L.push(" - "+val(x.it.q)+(x.m?" ("+x.m+")":"")+" ["+x.it.ref+"]"));}
@@ -592,7 +595,7 @@ function renderHist(){const h=(store().hist||[]);const box=$("hist");
 
 /* ---------- events ---------- */
 function bindInputs(){
-  ["ean","adresa","jistic","objekt","umisteni","erRok","zasah","vyroba","vyrKw","vyrA","sazbaZ","sazbaNa","fzm"].forEach(id=>{
+  ["ean","adresa","jistic","objekt","umisteni","erRok","zasah","vyroba","vyrKw","vyrA","sazbaZ","sazbaNa","fzm","em"].forEach(id=>{
     const el=$(id); el.value=S[id]; el.addEventListener(el.tagName==="SELECT"?"change":"input",()=>{S[id]=el.value;if(id==="fzm"&&el.value)S.faze=el.value==="f13"?"3":"1";if(id==="zasah"&&(el.value==="f13"||el.value==="f31"))S.faze=el.value==="f13"?"3":"1";renderAll();});
   });
 }
@@ -622,7 +625,7 @@ document.addEventListener("click",ev=>{
   if(b.id==="b-new"){Object.assign(S,{ean:"",adresa:"",ans:{},step:0,sug:{},foto:null});$("thumbs").innerHTML="";$("photo-status").textContent="";if(NATIVE){window.webkit.messageHandlers.newCheck.postMessage("");Object.keys(photoSlots).forEach(k=>delete photoSlots[k]);renderPhoto();}bindValues();go("udaje");return;}
   if(b.dataset.i!==undefined&&b.closest("#hist")){const x=(store().hist||[])[+b.dataset.i];if(x){Object.assign(S,JSON.parse(JSON.stringify(x.s)));bindValues();go("vysledek");}return;}
 });
-function bindValues(){["ean","adresa","jistic","objekt","umisteni","erRok","zasah","vyroba","vyrKw","vyrA","sazbaZ","sazbaNa","fzm"].forEach(id=>{$(id).value=S[id]??"";});}
+function bindValues(){["ean","adresa","jistic","objekt","umisteni","erRok","zasah","vyroba","vyrKw","vyrA","sazbaZ","sazbaNa","fzm","em"].forEach(id=>{$(id).value=S[id]??"";});}
 
 /* ---------- fotka rozváděče ---------- */
 const LBL={faze:{"1":"1f","3":"3f"},umisteni:{vnitrni:"vnitřní",venkovni:"venkovní"},typ_elektromeru:{elektronicky:"elektronický",indukcni:"indukční (starý)"},
@@ -648,7 +651,7 @@ function photoRequest(){
     "Do pole polozky dávej jen body kontroly, které lze z fotky posoudit s vysokou jistotou (např. materiál desky, snímatelné kryty, krytí podle umístění, upevnění). Rozměry, výšky a průřezy vodičů z fotky neposuzuj.",
     "U položek znamená odpoved ok stav bez závady (vyhovuje PP nn) a fail závadu. Pozor: bod k4 je formulován jako zjištění masky, takže maska, snímatelný kryt, lepené plexisklo nebo fólie = fail.",
     "Pole duvod a popis piš česky, stručně (jedna věta)."].join("\n");
-  const text="Zakázka: "+(S.mode==="montaz"?"montáž / výměna elektroměru, sazba "+S.sazbaNa:"změna sazby na "+S.sazbaNa)+". Typ objektu: "+S.objekt+".\n"+
+  const text="Zakázka: "+(S.mode==="montaz"?"montáž / výměna elektroměru, sazba "+S.sazbaNa:"změna sazby na "+S.sazbaNa)+". Elektroměr: "+(S.em==="amm"?"AMM":"klasický")+". Typ objektu: "+S.objekt+".\n"+
     "Dostaneš 3 fotky: celkové umístění rozváděče, detail rozváděče a detail jističů. Hodnotu a charakteristiku jističe čti hlavně z detailu jističů.\n"+
     "Body kontroly (id: text):\n"+items.map(x=>x.id+": "+x.t).join("\n")+
     "\n\nPopiš rozváděč na fotce a vyplň rozpoznané údaje.";
