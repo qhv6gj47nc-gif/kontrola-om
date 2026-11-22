@@ -191,7 +191,7 @@ footer{font-size:.78rem;color:var(--muted);padding-block:4px 24px;text-align:cen
     <h2 id="h-om">Odběrné místo</h2>
     <div class="photo" id="photo-box">
       <p class="q" style="margin:0">Fotky rozváděče <span id="photo-count" class="hint" style="font-weight:600"></span></p>
-      <p class="hint" id="photo-hint">Pořiďte 3 povinné fotky. Klepnutím na políčko otevřete fotoaparát.</p>
+      <p class="hint" id="photo-hint">Fotky jsou nepovinné. Uloží se do protokolu a podle nich lze předvyplnit body. Klepnutím na políčko otevřete fotoaparát.</p>
       <div class="slots" id="slots"></div>
       <div class="row" id="photo-btns">
         <button class="btn" id="b-analyze" disabled>Rozpoznat z fotek</button>
@@ -608,7 +608,7 @@ document.addEventListener("click",ev=>{
   if(b.dataset.jump){const i=steps().findIndex(x=>x.it.id===b.dataset.jump);if(i>=0){S.step=i;go("pruvodce");}return;}
   if(b.id==="w-prev"){S.step--;renderAll();return;}
   if(b.id==="w-next"){const st=steps();if(S.step<st.length-1){S.step++;renderAll();}else go("vysledek");return;}
-  if(b.id==="b-start"||(b.id==="b-go"&&S.view==="udaje")){if(NATIVE&&!photosDone()){$("photo-status").textContent="Nejdřív pořiďte všechny 3 povinné fotky.";$("photo-box").scrollIntoView({behavior:"smooth",block:"center"});return;}S.step=firstOpen();go("pruvodce");return;}
+  if(b.id==="b-start"||(b.id==="b-go"&&S.view==="udaje")){S.step=firstOpen();go("pruvodce");return;}
   if(b.id==="b-go"){go(S.view==="vysledek"?"udaje":"vysledek");return;}
   if(b.id==="b-resume"){S.step=firstOpen();go("pruvodce");return;}
   if(b.id==="b-list"){go("seznam");return;}
@@ -665,7 +665,7 @@ function renderSlots(){
     '<button class="slot-g" data-slotlib="'+n+'">z galerie</button></div>').join("");
   const c=SLOTS.filter(([n])=>photoSlots[n]).length;
   $("photo-count").textContent=c+" / 3";
-  $("b-analyze").disabled=!photosDone();
+  $("b-analyze").disabled=c===0;
 }
 function renderPhoto(){
   $("photo-btns").hidden=!NATIVE; $("key-card").hidden=!NATIVE; $("slots").hidden=!NATIVE;
@@ -703,7 +703,7 @@ window.onPhotoError=(msg)=>{$("photo-status").textContent=msg;setBusy(false);};
 window.onPhotoCancel=()=>{setBusy(false);};
 window.onExported=(p)=>{$("copy-msg").textContent="Protokol s fotkami je uložený v aplikaci Soubory → Kontrola OM → "+p+". Vyberte, kam ho ještě uložit (např. iCloud Drive).";};
 window.onKeyState=(has)=>{$("key-state").textContent=has?"Klíč je uložený.":"Klíč zatím není uložený.";};
-function setBusy(b){document.querySelectorAll("[data-slot],[data-slotlib]").forEach(x=>x.disabled=b);$("b-analyze").disabled=b||!photosDone();}
+function setBusy(b){document.querySelectorAll("[data-slot],[data-slotlib]").forEach(x=>x.disabled=b);$("b-analyze").disabled=b||!SLOTS.some(([n])=>photoSlots[n]);}
 document.addEventListener("click",ev=>{const b=ev.target.closest("button");if(!b)return;
   if(b.id==="home"){go("udaje");return;}
   if(b.dataset.slot||b.dataset.slotlib){setBusy(true);window.webkit.messageHandlers.photo.postMessage({slot:+(b.dataset.slot||b.dataset.slotlib),source:b.dataset.slot?"camera":"library"});}
