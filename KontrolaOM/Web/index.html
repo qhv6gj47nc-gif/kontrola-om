@@ -388,9 +388,6 @@ function REQ(){
   return out;
 }
 const SECS=[
- {id:"doklady",t:"Doklady",items:[
-  {id:"rv1",q:"Revizní zpráva (nebo potvrzení o jejím vydání) je k dispozici",col:"rev",ref:"VP_A"}
- ]},
  {id:"pristup",t:"Umístění a přístup k ER",items:[
   {id:"p1",col:"um",q:"ER je trvale přístupný pracovníkům PDS",ref:"PP nn 3.1"},
   {id:"p2",col:"um",q:"Před ER volný prostor min. 800 mm do hloubky i šířky, rovná plocha",ref:"PP nn 3.1"},
@@ -412,6 +409,7 @@ const SECS=[
   {id:"v4",col:"um",q:"Spodní hrana venkovního ER min. 600 mm nad terénem",when:()=>S.umisteni!=="vnitrni",ref:"PP nn tab. 1"},
   {id:"v5",col:"konstr",q:()=>"Volný prostor pro elektroměr min. "+(S.faze==="1"&&S.erRok==="stary"?"180×300×160 mm":"200×400×160 mm")+" (š×v×h)",d:()=>S.faze==="1"?"Jednofázový EM: ER do 31. 12. 2025 min. 180×300×160, od 1. 1. 2026 min. 200×400×160.":"Třífázový EM.",ref:"PP nn tab. 2"},
   {id:"v6",col:"konstr",q:"Prostor pro spínací prvek / komunikační jednotku min. 180×300×160 mm",when:()=>S.mode==="montaz"?sp():z1T()&&sp(),ref:"PP nn tab. 2"},
+  {id:"v7",col:"konstr",q:"Je osazen jistič pro spínací prvek s dostatečnými parametry",d:"2–6 A, charakteristika B nebo C, vypínací schopnost min. 10 kA, montáž svisle.",when:()=>S.mode==="montaz"?sp():z1T()&&sp(),ref:"PP nn 3.4.1"},
  ]},
  {id:"hj",t:"Hlavní jistič před elektroměrem",items:[
   {id:"j1",q:"Jmenovitý proud v řadě PDS",autoOnly:true,auto:()=>{if(!j())return null;return SER_J.includes(j())?["ok",j()+" A je v normalizované řadě"]:["fail",j()+" A není v řadě "+SER_J.slice(0,11).join(", ")+" …"]},ref:"PP nn 3.4.1"},
@@ -419,7 +417,7 @@ const SECS=[
   {id:"j3",q:"Přímé měření (jistič do 80 A včetně)",autoOnly:true,auto:()=>{if(!j())return null;return j()<=80?["ok","Přímé měření"]:["fail","Nad 80 A nepřímé měření s MTP, řešit dle PP nn 3.6 a schémat 4/5"]},ref:"PP nn 3.5.1"},
   {id:"j4",q:"Charakteristika B",autoOnly:true,auto:()=>S.char==="B"?["ok","Charakteristika B"]:["warn","Charakteristika "+S.char+" jen s kladným stanoviskem PDS"],ref:"PP nn 3.4.1"},
   {id:"j5",col:"jist",q:()=>"Doloženo kladné stanovisko PDS k charakteristice "+S.char,when:()=>S.char!=="B",ref:"PP nn 3.4.1"},
-  {id:"j6",col:"jist",q:()=>"Počet pólů jističe odpovídá počtu fází ("+S.faze+"f), 3p jistič bez možnosti ovládat póly samostatně",ref:"PP nn 3.4.1"},
+  {id:"j6",col:"jist",q:()=>S.faze==="3"?"Třífázový elektroměr: hlavní jistič je třífázový (3pólový), póly nelze ovládat samostatně":"Jednofázový elektroměr: hlavní jistič je jednofázový (1pólový)",ref:"PP nn 3.4.1"},
   {id:"j7",col:"jist",q:"Zkratová odolnost min. 10 kA, hodnota, charakteristika a vypínací schopnost zřetelně a nezáměnně označeny",ref:"PP nn 3.4.1"},
   {id:"j8",col:"jist",q:"Jistič bez dálkového ovládání a bez signalizačního kontaktu",ref:"PP nn 3.4.1"},
   {id:"j9",col:"jist",q:"Montáž svisle, páčka nahoru = zapnuto, jistič plombovatelný",ref:"PP nn 3.4.1"},
@@ -441,7 +439,6 @@ const SECS=[
   {id:"t0",q:"Nárok na sazbu",autoOnly:true,when:()=>two(),auto:()=>["warn",TAR[S.sazbaNa].cond+" Ověřte v cenovém rozhodnutí ERÚ."],ref:"Cenové rozhodnutí ERÚ"},
   {id:"t1",q:"Spotřebiče pro sazbu jsou instalované a zapojené přes blokovací stykač",when:()=>two()&&TAR[S.sazbaNa].blok.length>0,d:()=>"Požadované blokované okruhy: "+TAR[S.sazbaNa].blok.join(", ")+(TAR[S.sazbaNa].tc?". Kompresor TČ blokován být nemusí.":"."),ref:"VP_B, ERÚ"},
   {id:"t2",q:"Samostatný spínací prvek (HDO přijímač, spínací hodiny nebo ŘJ) pro toto OM",d:"Společné ovládání blokování pro více OM je při změně sazby nutné rozdělit.",when:()=>sp(),ref:"VP_B, PP nn 3.4"},
-  {id:"t3",q:"Jistič spínacího prvku 2–6 A, char. B nebo C, min. 10 kA, svisle",when:()=>sp()||!two(),ref:"PP nn 3.4.1"},
   {id:"t4",q:"Tarif ani blokování nejsou ovládány ze spínacího prvku v jiném ER",when:()=>sp()||!two(),ref:"PP nn 3.4"},
   {id:"t6",q:"AKU a TUV mají dva samostatné stykače",when:()=>two()&&TAR[S.sazbaNa].blok.includes("AKU"),ref:"VP_B"},
   {id:"t8",q:()=>"Vodiče označeny dle tab. 3 PP nn: TAR"+(two()?", "+TAR[S.sazbaNa].blok.join(", "):"")+(S.vyroba==="ano"?", N 0 %":""),ref:"PP nn tab. 3"},
