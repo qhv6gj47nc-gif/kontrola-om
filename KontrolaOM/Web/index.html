@@ -151,6 +151,7 @@ textarea{width:100%;min-height:160px;font:500 .8rem var(--f-mono);color:var(--fg
 @keyframes slide{from{opacity:.4;transform:translateX(14px)}to{opacity:1;transform:none}}
 .wiz-q{font-family:var(--f-display);font-size:1.4rem;font-weight:700;line-height:1.25;letter-spacing:-.01em;margin:0;text-wrap:balance}
 .wiz-ans{display:grid;gap:10px}
+.hl{color:var(--bad);font-weight:700;font-size:1.05rem;margin:6px 0 0}
 .inv .a-fail{order:-1}
 .wiz-ans button{min-height:60px;border-radius:16px;border:0;background:var(--surface);color:var(--fg);font-weight:650;font-size:1.1rem;cursor:pointer;box-shadow:var(--shadow);display:flex;align-items:center;justify-content:center;gap:10px;transition:background .15s,color .15s,transform .1s}
 .wiz-ans button::before{display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;font-size:.95rem;font-weight:800}
@@ -421,14 +422,13 @@ const SECS=[
   {id:"j7",col:"jist",q:"Zkratová odolnost min. 10 kA, hodnota, charakteristika a vypínací schopnost zřetelně a nezáměnně označeny",ref:"PP nn 3.4.1"},
   {id:"j8",col:"jist",q:"Jistič bez dálkového ovládání a bez signalizačního kontaktu",ref:"PP nn 3.4.1"},
   {id:"j9",col:"jist",q:"Montáž svisle, páčka nahoru = zapnuto, jistič plombovatelný",ref:"PP nn 3.4.1"},
-  {id:"j10",col:"jist",q:"Hodnota jističe odpovídá rezervovanému příkonu ve smlouvě / žádosti",ref:"PP nn 1.2, 3.4.1"}
+  {id:"j10",col:"jist",q:"Hodnota jističe odpovídá rezervovanému příkonu ve smlouvě / žádosti",hl:()=>"Zadáno: "+(S.faze==="3"?"3×":"1×")+(S.jistic||"?")+" A, charakteristika "+S.char,ref:"PP nn 1.2, 3.4.1"}
  ]},
  {id:"vodice",t:"Vodiče a zapojení",items:[
   {id:"w2",col:"vod",q:"Lanovaná zakončení s lisovanými dutinkami (ne cínovaná), silové dutinky s izolačním límcem min. 18 mm",ref:"PP nn 3.4.2"},
   {id:"w4",col:"vod",q:"Přívodní a vývodní fázové vodiče měřeného OM mají stejný průřez",ref:"PP nn 3.5.2"},
   {id:"w5",col:"vod",q:"Správný sled fází L1, L2, L3",when:()=>S.faze==="3",ref:"PP nn 3.2"},
   {id:"w6",col:"vod",get rec(){return REQ().tol},q:"Barvy vodičů: L1 hnědá, L2 černá, L3 šedá, N světle modrá, PEN zelenožlutá",ref:"VP_01 schéma 1/2"},
-  {id:"w8",col:"vod",q:"Stávající Al vývod jen od vypínače instalace nebo vývodové svorkovnice",rec:true,ref:"PP nn 3.4.2"},
  ]},
  {id:"vyp",t:"Vypínač instalace",when:()=>REQ().konstr,items:[
   {id:"x1",q:"Za elektroměrem je vypínač instalace, který galvanicky odpojí instalaci zákazníka",ref:"PP nn 3.4.3"},
@@ -500,6 +500,7 @@ function renderSections(){
       const r=status(it); const el=document.createElement("div");
       el.className="item"+(r.s?" s-"+(r.s==="na"?"na":r.s):"");
       let h='<p class="q">'+esc(val(it.q))+(it.rec?'<span class="rec">doporučeno</span>':"")+'</p>';
+      if(it.hl)h+='<p class="hl">'+esc(val(it.hl))+'</p>';
       if(it.d)h+='<p class="d">'+esc(val(it.d))+'</p>';
       if(it.autoOnly){ h+= r.s? '<div class="auto '+r.s+'">'+esc(r.m)+'</div>' : '<div class="auto" style="background:var(--surface-2);color:var(--muted)">Doplňte údaje nahoře</div>'; }
       else{ const a=S.ans[it.id]||"";
@@ -549,7 +550,7 @@ function renderWizard(){
   box.innerHTML='<div class="wiz-head"><span class="wiz-sec">'+esc(sec.t)+'</span><span class="wiz-num">Bod '+(S.step+1)+' z '+st.length+'</span></div>'+
    '<div class="prog" aria-hidden="true"><i style="width:'+Math.round(answered/st.length*100)+'%"></i></div>'+
    '<div class="wiz-card"><p class="wiz-q">'+esc(val(it.q))+(it.rec?'<span class="rec" style="font-size:.68rem;font-weight:600;color:var(--accent);background:var(--accent-2);border-radius:6px;padding:2px 6px;margin-left:6px;vertical-align:4px;text-transform:uppercase">doporučeno</span>':'')+'</p>'+
-   (it.d?'<p class="d">'+esc(val(it.d))+'</p>':'')+(S.sug&&S.sug[it.id]?'<p class="sugnote">Předvyplněno z fotky: '+esc(S.sug[it.id])+' Zkontrolujte a potvrďte.</p>':'')+'<span class="ref">'+esc(it.ref)+'</span></div>'+
+   (it.hl?'<p class="hl">'+esc(val(it.hl))+'</p>':'')+(it.d?'<p class="d">'+esc(val(it.d))+'</p>':'')+(S.sug&&S.sug[it.id]?'<p class="sugnote">Předvyplněno z fotky: '+esc(S.sug[it.id])+' Zkontrolujte a potvrďte.</p>':'')+'<span class="ref">'+esc(it.ref)+'</span></div>'+
    '<div class="wiz-ans'+(it.inv?' inv':'')+'" role="group" aria-label="Odpověď">'+
    '<button class="a-ok" data-w="ok" aria-pressed="'+(a==="ok")+'">'+(it.lab?it.lab[0]:"Ano")+'</button>'+
    '<button class="a-fail" data-w="fail" aria-pressed="'+(a==="fail")+'">'+(it.lab?it.lab[1]:"Ne")+'</button>'+
