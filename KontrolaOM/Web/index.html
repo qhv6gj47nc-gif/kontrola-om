@@ -245,9 +245,9 @@ footer{font-size:.78rem;color:var(--muted);padding-block:4px 24px;text-align:cen
       <label class="f">Max. AC proud na fázi (A)<input id="vyrA" type="number" inputmode="decimal" step="0.1"></label>
     </div>
     <div id="sazba-box" class="grid2" hidden>
-      <label class="f">Současná sazba<select id="sazbaZ"></select></label>
-      <label class="f">Požadovaná sazba<select id="sazbaNa"></select></label>
-      <label class="f">Změna počtu fází<select id="fzm"><option value="">Beze změny</option><option value="f13">Současně z 1F na 3F</option><option value="f31">Současně z 3F na 1F</option></select></label>
+      <label class="f" id="sazbaZ-l">Současná sazba<select id="sazbaZ"></select></label>
+      <label class="f"><span id="sazbaNa-t">Požadovaná sazba</span><select id="sazbaNa"></select></label>
+      <label class="f" id="fzm-l">Změna počtu fází<select id="fzm"><option value="">Beze změny</option><option value="f13">Současně z 1F na 3F</option><option value="f31">Současně z 3F na 1F</option></select></label>
     </div>
     <div id="calc" class="calc" aria-live="polite"></div>
     <div id="banners" style="display:flex;flex-direction:column;gap:8px"></div>
@@ -335,7 +335,8 @@ const TAR={
   D61d:{n:"D61d – víkendová (rekreační objekty)",two:true,blok:[],cond:"Víkendový režim pro rekreační objekty."}
 };
 const S={mode:"montaz",faze:"3",char:"B",jistic:25,predj:32,objekt:"rd",umisteni:"venkovni",vyska:1300,erRok:"stary",zasah:"vymena",fzm:"",vyroba:"ne",vyrKw:"",vyrA:"",sazbaZ:"D02d",sazbaNa:"D25d",ean:"",adresa:"",ans:{},view:"udaje",step:0,sug:{},foto:null};
-const two=()=>S.mode==="sazba"&&TAR[S.sazbaNa]&&TAR[S.sazbaNa].two;
+const two=()=>!!(TAR[S.sazbaNa]&&TAR[S.sazbaNa].two);
+const z1T=()=>!!(TAR[S.sazbaZ]&&!TAR[S.sazbaZ].two);
 const tarOk=()=>S.mode==="sazba";
 const j=()=>Number(S.jistic)||0;
 
@@ -408,7 +409,7 @@ const SECS=[
  {id:"vysky",t:"Prostor pro přístroje",items:[
   {id:"v4",col:"um",q:"Spodní hrana venkovního ER min. 600 mm nad terénem",when:()=>S.umisteni!=="vnitrni",ref:"PP nn tab. 1"},
   {id:"v5",col:"konstr",q:()=>"Volný prostor pro elektroměr min. "+(S.faze==="1"&&S.erRok==="stary"?"180×300×160 mm":"200×400×160 mm")+" (š×v×h)",d:()=>S.faze==="1"?"Jednofázový EM: ER do 31. 12. 2025 min. 180×300×160, od 1. 1. 2026 min. 200×400×160.":"Třífázový EM.",ref:"PP nn tab. 2"},
-  {id:"v6",col:"konstr",q:"Prostor pro spínací prvek / komunikační jednotku min. 180×300×160 mm",ref:"PP nn tab. 2"},
+  {id:"v6",col:"konstr",q:"Prostor pro spínací prvek / komunikační jednotku min. 180×300×160 mm",when:()=>S.mode==="montaz"?two():z1T()&&two(),ref:"PP nn tab. 2"},
  ]},
  {id:"hj",t:"Hlavní jistič před elektroměrem",items:[
   {id:"j1",q:"Jmenovitý proud v řadě PDS",autoOnly:true,auto:()=>{if(!j())return null;return SER_J.includes(j())?["ok",j()+" A je v normalizované řadě"]:["fail",j()+" A není v řadě "+SER_J.slice(0,11).join(", ")+" …"]},ref:"PP nn 3.4.1"},
@@ -514,7 +515,7 @@ function renderTop(){
   document.querySelectorAll(".modes button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.mode===S.mode));
   document.querySelectorAll("#faze button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.v===S.faze));
   document.querySelectorAll("#char button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.v===S.char));
-  $("sazba-box").hidden=S.mode!=="sazba"; $("zasah-l").hidden=S.mode==="sazba"; $("vyroba-box").hidden=S.vyroba!=="ano";
+  $("sazba-box").hidden=false; $("sazbaZ-l").hidden=$("fzm-l").hidden=S.mode!=="sazba"; $("sazbaNa-t").textContent=S.mode==="sazba"?"Požadovaná sazba":"Distribuční sazba"; $("zasah-l").hidden=S.mode==="sazba"; $("vyroba-box").hidden=S.vyroba!=="ano";
   const c=[]; if(j()){c.push("Rezervovaný příkon: "+S.faze+"×"+j()+" A ≈ "+(S.faze==="3"?(j()*0.4*Math.sqrt(3)).toFixed(1):(j()*0.23).toFixed(1))+" kW")}
   $("calc").innerHTML=c.map(esc).join("<br>"); $("calc").hidden=!c.length;
   const b=[]; if(j()>80)b.push(["bad","Jistič nad 80 A: OM vyžaduje nepřímé měření s MTP. Tato pomůcka ho zatím nepokrývá."]);
@@ -571,7 +572,7 @@ function firstOpen(){const st=steps();const i=st.findIndex(x=>!S.ans[x.it.id]);r
 /* ---------- protocol, history ---------- */
 function protocol(){
   const e=evaluate(); const d=new Date();
-  const L=["PROTOKOL KONTROLY ODBĚRNÉHO MÍSTA","Datum: "+d.toLocaleString("cs-CZ"),"Zakázka: "+(S.mode==="montaz"?"Montáž / výměna elektroměru":"Změna sazby "+S.sazbaZ+" → "+S.sazbaNa),"Činnost (VP_A): "+acts().filter(k=>VPA[k]).map(k=>VPA[k].n).join(" + ")+(spolEx()?" (společný ER s osazenými EM – maska tolerována)":""),
+  const L=["PROTOKOL KONTROLY ODBĚRNÉHO MÍSTA","Datum: "+d.toLocaleString("cs-CZ"),"Zakázka: "+(S.mode==="montaz"?"Montáž / výměna elektroměru, sazba "+S.sazbaNa:"Změna sazby "+S.sazbaZ+" → "+S.sazbaNa),"Činnost (VP_A): "+acts().filter(k=>VPA[k]).map(k=>VPA[k].n).join(" + ")+(spolEx()?" (společný ER s osazenými EM – maska tolerována)":""),
    "EAN: "+(S.ean||"–"),"Adresa: "+(S.adresa||"–"),"Jistič: "+S.faze+"×"+(j()||"–")+" A, char. "+S.char,
    "","VÝSLEDEK: "+e.v.t.toUpperCase()];
   if(e.fails.length){L.push("","Závady:");e.fails.forEach(x=>L.push(" - "+val(x.it.q)+(x.m?" ("+x.m+")":"")+" ["+x.it.ref+"]"));}
@@ -647,7 +648,7 @@ function photoRequest(){
     "Do pole polozky dávej jen body kontroly, které lze z fotky posoudit s vysokou jistotou (např. materiál desky, snímatelné kryty, krytí podle umístění, upevnění). Rozměry, výšky a průřezy vodičů z fotky neposuzuj.",
     "U položek znamená odpoved ok stav bez závady (vyhovuje PP nn) a fail závadu. Pozor: bod k4 je formulován jako zjištění masky, takže maska, snímatelný kryt, lepené plexisklo nebo fólie = fail.",
     "Pole duvod a popis piš česky, stručně (jedna věta)."].join("\n");
-  const text="Zakázka: "+(S.mode==="montaz"?"montáž / výměna elektroměru":"změna sazby na "+S.sazbaNa)+". Typ objektu: "+S.objekt+".\n"+
+  const text="Zakázka: "+(S.mode==="montaz"?"montáž / výměna elektroměru, sazba "+S.sazbaNa:"změna sazby na "+S.sazbaNa)+". Typ objektu: "+S.objekt+".\n"+
     "Dostaneš 3 fotky: celkové umístění rozváděče, detail rozváděče a detail jističů. Hodnotu a charakteristiku jističe čti hlavně z detailu jističů.\n"+
     "Body kontroly (id: text):\n"+items.map(x=>x.id+": "+x.t).join("\n")+
     "\n\nPopiš rozváděč na fotce a vyplň rozpoznané údaje.";
