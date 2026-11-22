@@ -218,6 +218,7 @@ footer{font-size:.78rem;color:var(--muted);padding-block:4px 24px;text-align:cen
     </div>
     <div class="grid2">
       <label class="f">Rozváděč vyroben<select id="erRok"><option value="stary">do 31. 12. 2025</option><option value="novy">od 1. 1. 2026</option></select></label>
+      <label class="f">Společný ER pro více elektroměrů<select id="spol"><option value="">Ne</option><option value="ano">Ano, některé EM jsou již osazeny</option></select></label>
     </div>
     <div class="grid2">
       <label class="f" id="zasah-l">Typ činnosti (VP_A)<select id="zasah">
@@ -247,7 +248,6 @@ footer{font-size:.78rem;color:var(--muted);padding-block:4px 24px;text-align:cen
       <label class="f">Současná sazba<select id="sazbaZ"></select></label>
       <label class="f">Požadovaná sazba<select id="sazbaNa"></select></label>
       <label class="f">Změna počtu fází<select id="fzm"><option value="">Beze změny</option><option value="f13">Současně z 1F na 3F</option><option value="f31">Současně z 3F na 1F</option></select></label>
-      <label class="f">Společný ER pro více elektroměrů<select id="spol"><option value="">Ne</option><option value="ano">Ano, některé EM jsou již osazeny</option></select></label>
     </div>
     <div id="calc" class="calc" aria-live="polite"></div>
     <div id="banners" style="display:flex;flex-direction:column;gap:8px"></div>
@@ -375,7 +375,7 @@ function acts(){
   if(S.fzm)a.push(S.fzm);
   return a;
 }
-function spolEx(){return S.mode==="sazba"&&S.spol==="ano";}
+function spolEx(){return S.spol==="ano";}
 function REQ(){
   const out={tol:true,y:[]}; let anyVod=false;
   COLS.forEach(c=>out[c]=false);
@@ -520,7 +520,7 @@ function renderTop(){
   {const R=REQ(),A=acts().filter(k=>VPA[k]);
    if(A.length){const req=COLS.filter(c=>R[c]&&c!=="mtp").map(c=>COLN[c]),no=COLS.filter(c=>!R[c]&&c!=="mtp").map(c=>COLN[c]);
     b.push(["info","Činnost: "+A.map(k=>VPA[k].n).join(" + ")+(A.length>1?" (platí přísnější požadavky)":"")+". Povinné dle VP_A: "+(req.join(", ")||"nic")+". Bez nutných úprav: "+(no.join(", ")||"nic")+"."+(R.vod&&R.tol?" Nedodržení barevného značení vodičů je tolerováno.":"")]);}
-   if(spolEx())b.push(["info","Společný ER s již osazenými elektroměry: krycí maska nebrání změně sazby (výjimka). Ostatní podmínky platí beze změny."]);
+   if(spolEx())b.push(["info","Společný ER s již osazenými elektroměry: krycí maska nebrání montáži EM ani změně sazby (výjimka). Ostatní podmínky platí beze změny."]);
    if(A.some(k=>VPA[k].mimo))b.push(["info","Prostá výměna elektroměru není v tabulce VP_A, kontrolují se proto hlavní části rozváděče."]);
    if(R.hdv||R.odb)b.push(["warn","Činnost vyžaduje i "+[R.hdv?"HDV (PP nn 2.2)":"",R.odb?"odbočky k elektroměrům (PP nn 2.3)":""].filter(Boolean).join(" a ")+" podle aktuálních PP nn."]);
    if(R.y.length)b.push(["warn","Od 1. 1. 2024 se u této činnosti vyžaduje "+[...new Set(R.y)].map(c=>c==="maska"?"ER bez masky (3.2.2)":"jističe dle PP nn (3.4.1)").join(" a ")+"."]);
