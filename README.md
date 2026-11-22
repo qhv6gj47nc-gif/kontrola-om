@@ -28,3 +28,14 @@ https://github.com/qhv6gj47nc-gif/kontrola-om/releases/latest/download/KontrolaO
 - `KontrolaOM/KontrolaOMApp.swift` – nativní obal aplikace
 - `KontrolaOM/Web/index.html` – kontrolní logika a obrazovky
 - `.github/workflows/build-ipa.yml` – automatické sestavení .ipa
+
+## Rozpoznávání rozváděče z fotky
+Na úvodní obrazovce „Vyfotit rozváděč“ nebo „Vybrat z galerie“. Fotka se odešle k rozboru do Claude
+(model `claude-opus-5-5`, Anthropic API), aplikace ukáže návrh (fáze, jistič, typ elektroměru, tarif, HDO
+a předvyplněné body kontroly) a po „Použít návrh“ se předvyplněné body označí v průvodci k potvrzení.
+
+Potřebuje internet a vlastní API klíč:
+1. Na https://console.anthropic.com si založte účet, nabijte kredit a vytvořte API klíč.
+2. V aplikaci: dole „Nastavení rozpoznávání“ → vložit klíč → Uložit. Klíč se uloží v klíčence iPhonu.
+
+Cena je řádově 1–2 Kč za fotku. Pravidla rozpoznávání z praxe jsou v `index.html` ve funkci `photoRequest()`.

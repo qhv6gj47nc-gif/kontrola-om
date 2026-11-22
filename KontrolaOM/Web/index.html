@@ -103,6 +103,15 @@ textarea{width:100%;min-height:160px;font:500 .8rem var(--f-mono);color:var(--fg
 .pill.ok{background:var(--ok-bg);color:var(--ok)} .pill.bad{background:var(--bad-bg);color:var(--bad)} .pill.warn{background:var(--warn-bg);color:var(--warn)} .pill.open{background:var(--surface-2);color:var(--muted)}
 .bar .stat{flex:1;min-width:0;font-family:var(--f-mono);font-size:.8rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .bar .btn{min-height:40px;padding:8px 14px}
+.photo{display:flex;flex-direction:column;gap:10px;border:1px dashed var(--line);border-radius:10px;padding:12px}
+.photo .row{display:flex;gap:8px;flex-wrap:wrap}
+.photo .row .btn{flex:1 1 140px}
+.thumbs{display:flex;gap:8px;flex-wrap:wrap}
+.thumbs img{width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid var(--line)}
+.sug{background:var(--surface-2);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;font-size:.92rem}
+.sug dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:4px 12px}
+.sug dt{color:var(--muted)} .sug dd{margin:0;font-weight:600}
+.sugnote{font-size:.85rem;background:var(--warn-bg);color:var(--warn);border-radius:8px;padding:8px 10px}
 .start{min-height:58px;font-size:1.1rem;width:100%}
 .wiz{display:flex;flex-direction:column;gap:14px}
 .wiz-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
@@ -137,6 +146,17 @@ footer{font-size:.8rem;color:var(--muted);padding-block:8px 24px}
  <div id="v-udaje" style="display:flex;flex-direction:column;gap:18px">
   <section class="card" aria-labelledby="h-om">
     <h2 id="h-om">Odběrné místo</h2>
+    <div class="photo" id="photo-box">
+      <p class="q" style="margin:0">Fotka rozváděče</p>
+      <p class="hint" id="photo-hint">Vyfoťte celý rozváděč, případně i detail jističe. Aplikace rozpozná přístroje a předvyplní, co z fotky jde poznat. Vše pak potvrdíte v průvodci.</p>
+      <div class="row" id="photo-btns">
+        <button class="btn" id="b-cam">Vyfotit rozváděč</button>
+        <button class="btn ghost" id="b-lib">Vybrat z galerie</button>
+      </div>
+      <div class="thumbs" id="thumbs"></div>
+      <p class="hint" id="photo-status" aria-live="polite"></p>
+      <div id="photo-res"></div>
+    </div>
     <div class="grid2">
       <label class="f">EAN / číslo OM<input id="ean" inputmode="numeric" placeholder="859182400…"></label>
       <label class="f">Adresa<input id="adresa" placeholder="Ulice č.p., obec"></label>
@@ -204,6 +224,14 @@ footer{font-size:.8rem;color:var(--muted);padding-block:8px 24px}
   </section>
 
   <div id="v-info" style="display:flex;flex-direction:column;gap:18px">
+  <section class="card" aria-labelledby="h-k" id="key-card">
+    <h2 id="h-k">Nastavení rozpoznávání</h2>
+    <p class="hint">Rozbor fotky běží přes Claude (Anthropic) a potřebuje internet a vlastní API klíč. Klíč se uloží bezpečně v klíčence iPhonu.</p>
+    <label class="f">API klíč Anthropic<input id="apikey" type="password" autocomplete="off" placeholder="sk-ant-…"></label>
+    <div class="actions"><button class="btn" id="b-key">Uložit klíč</button><button class="btn ghost" id="b-key-del">Smazat klíč</button></div>
+    <p class="hint" id="key-state"></p>
+  </section>
+
   <section class="card" aria-labelledby="h-h">
     <h2 id="h-h">Historie v tomto zařízení</h2>
     <div class="hist" id="hist"></div>
@@ -248,7 +276,7 @@ const TAR={
   D57d:{n:"D57d – tepelné čerpadlo (NT 20 h)",two:true,blok:["PV"],tc:true,cond:"Vytápění tepelným čerpadlem. Kompresor TČ blokován být nemusí, vodič ATC je volitelný."},
   D61d:{n:"D61d – víkendová (rekreační objekty)",two:true,blok:[],cond:"Víkendový režim pro rekreační objekty."}
 };
-const S={mode:"montaz",faze:"3",char:"B",jistic:25,predj:32,objekt:"rd",umisteni:"venkovni",vyska:1300,erRok:"stary",zasah:"vymena",vyroba:"ne",vyrKw:"",vyrA:"",sazbaZ:"D02d",sazbaNa:"D25d",ean:"",adresa:"",ans:{},view:"udaje",step:0};
+const S={mode:"montaz",faze:"3",char:"B",jistic:25,predj:32,objekt:"rd",umisteni:"venkovni",vyska:1300,erRok:"stary",zasah:"vymena",vyroba:"ne",vyrKw:"",vyrA:"",sazbaZ:"D02d",sazbaNa:"D25d",ean:"",adresa:"",ans:{},view:"udaje",step:0,sug:{},foto:null};
 const two=()=>S.mode==="sazba"&&TAR[S.sazbaNa]&&TAR[S.sazbaNa].two;
 const tarOk=()=>S.mode==="sazba";
 const j=()=>Number(S.jistic)||0;
@@ -404,7 +432,7 @@ function renderWizard(){
   box.innerHTML='<div class="wiz-head"><span class="wiz-sec">'+esc(sec.t)+'</span><span class="wiz-num">Bod '+(S.step+1)+' z '+st.length+'</span></div>'+
    '<div class="prog" aria-hidden="true"><i style="width:'+Math.round(answered/st.length*100)+'%"></i></div>'+
    '<div class="wiz-card"><p class="wiz-q">'+esc(val(it.q))+(it.rec?'<span class="rec" style="font-size:.7rem;font-weight:500;color:var(--muted);border:1px solid var(--line);border-radius:4px;padding:0 5px;margin-left:6px;vertical-align:3px;text-transform:uppercase">doporučeno</span>':'')+'</p>'+
-   (it.d?'<p class="d">'+esc(val(it.d))+'</p>':'')+'<span class="ref">'+esc(it.ref)+'</span></div>'+
+   (it.d?'<p class="d">'+esc(val(it.d))+'</p>':'')+(S.sug&&S.sug[it.id]?'<p class="sugnote">Předvyplněno z fotky: '+esc(S.sug[it.id])+' Zkontrolujte a potvrďte.</p>':'')+'<span class="ref">'+esc(it.ref)+'</span></div>'+
    '<div class="wiz-ans" role="group" aria-label="Odpověď">'+
    '<button class="a-ok" data-w="ok" aria-pressed="'+(a==="ok")+'">Vyhovuje</button>'+
    '<button class="a-fail" data-w="fail" aria-pressed="'+(a==="fail")+'">Závada</button>'+
@@ -430,6 +458,7 @@ function protocol(){
   if(e.fails.length){L.push("","Závady:");e.fails.forEach(x=>L.push(" - "+val(x.it.q)+(x.m?" ("+x.m+")":"")+" ["+x.it.ref+"]"));}
   if(e.warns.length){L.push("","Výhrady:");e.warns.forEach(x=>L.push(" - "+val(x.it.q)+(x.m?" ("+x.m+")":"")+" ["+x.it.ref+"]"));}
   if(e.open)L.push("","Nevyplněno: "+e.open+" povinných bodů");
+  if(S.foto&&S.foto.popis)L.push("","Z fotky rozváděče: "+S.foto.popis);
   L.push("","Podklad: Připojovací podmínky nn ČEZ Distribuce (platnost od 1. 9. 2025), VP_B.");
   return L.join("\n");
 }
@@ -453,8 +482,8 @@ document.addEventListener("click",ev=>{
   if(b.dataset.mode){S.mode=b.dataset.mode;renderAll();return;}
   if(b.parentElement.id==="faze"){S.faze=b.dataset.v;renderAll();return;}
   if(b.parentElement.id==="char"){S.char=b.dataset.v;renderAll();return;}
-  if(b.dataset.id){const id=b.dataset.id;S.ans[id]=S.ans[id]===b.dataset.a?undefined:b.dataset.a;const y=window.scrollY;renderAll();window.scrollTo(0,y);return;}
-  if(b.dataset.w){const st=steps();const it=st[S.step].it;S.ans[it.id]=b.dataset.w;renderWizard();renderVerdict();persist();
+  if(b.dataset.id){const id=b.dataset.id;if(S.sug)delete S.sug[id];S.ans[id]=S.ans[id]===b.dataset.a?undefined:b.dataset.a;const y=window.scrollY;renderAll();window.scrollTo(0,y);return;}
+  if(b.dataset.w){const st=steps();const it=st[S.step].it;S.ans[it.id]=b.dataset.w;if(S.sug)delete S.sug[it.id];renderWizard();renderVerdict();persist();
     setTimeout(()=>{if(S.step<st.length-1){S.step++;renderAll();}else go("vysledek");},220);return;}
   if(b.dataset.jump){const i=steps().findIndex(x=>x.it.id===b.dataset.jump);if(i>=0){S.step=i;go("pruvodce");}return;}
   if(b.id==="w-prev"){S.step--;renderAll();return;}
@@ -470,10 +499,81 @@ document.addEventListener("click",ev=>{
     const fb=()=>{ta.focus();ta.select();$("copy-msg").textContent="Text je označený, zkopírujte ho ručně.";};
     try{navigator.clipboard.writeText(t).then(done,fb)}catch(_){fb()} return;}
   if(b.id==="b-save"){const o=store();o.hist=[{d:new Date().toLocaleString("cs-CZ"),v:evaluate().v.t,s:JSON.parse(JSON.stringify(S))},...(o.hist||[])].slice(0,30);storeSet(o);renderHist();$("copy-msg").textContent="Uloženo do historie v tomto zařízení.";return;}
-  if(b.id==="b-new"){Object.assign(S,{ean:"",adresa:"",ans:{},step:0});bindValues();go("udaje");return;}
+  if(b.id==="b-new"){Object.assign(S,{ean:"",adresa:"",ans:{},step:0,sug:{},foto:null});$("thumbs").innerHTML="";$("photo-status").textContent="";bindValues();go("udaje");return;}
   if(b.dataset.i!==undefined&&b.closest("#hist")){const x=(store().hist||[])[+b.dataset.i];if(x){Object.assign(S,JSON.parse(JSON.stringify(x.s)));bindValues();go("vysledek");}return;}
 });
 function bindValues(){["ean","adresa","jistic","objekt","umisteni","erRok","zasah","vyroba","vyrKw","vyrA","sazbaZ","sazbaNa"].forEach(id=>{$(id).value=S[id]??"";});}
+
+/* ---------- fotka rozváděče ---------- */
+const LBL={faze:{"1":"1f","3":"3f"},umisteni:{vnitrni:"vnitřní",venkovni:"venkovní"},typ_elektromeru:{elektronicky:"elektronický",indukcni:"indukční (starý)"},
+  tarif:{jednotarif:"jednotarif",dvoutarif:"dvoutarif"},hdo:{prijimac_osazen:"přijímač HDO osazen",pripravena_pozice:"připravená pozice pro HDO",neni:"bez HDO"}};
+function photoRequest(){
+  const items=[];visibleItems().forEach(({sec,its})=>its.forEach(it=>{if(!it.autoOnly)items.push({id:it.id,t:sec.t+": "+val(it.q)})}));
+  const str=(e)=>({type:"string",enum:e});
+  const schema={type:"object",additionalProperties:false,
+    required:["popis","faze","jistic_a","charakteristika","umisteni","typ_elektromeru","tarif","hdo","polozky"],
+    properties:{popis:{type:"string"},faze:str(["1","3","nezjisteno"]),jistic_a:{anyOf:[{type:"integer"},{type:"null"}]},
+      charakteristika:str(["B","C","D","nezjisteno"]),umisteni:str(["vnitrni","venkovni","nezjisteno"]),
+      typ_elektromeru:str(["elektronicky","indukcni","nezjisteno"]),tarif:str(["jednotarif","dvoutarif","nezjisteno"]),
+      hdo:str(["prijimac_osazen","pripravena_pozice","neni","nezjisteno"]),
+      polozky:{type:"array",items:{type:"object",additionalProperties:false,required:["id","odpoved","duvod"],
+        properties:{id:str(items.map(x=>x.id)),odpoved:str(["ok","fail"]),duvod:{type:"string"}}}}}};
+  const system=["Jsi zkušený montér elektroměrů v distribuční soustavě ČEZ Distribuce. Posuzuješ fotky elektroměrových rozváděčů (ER) podle Připojovacích podmínek nn.",
+    "Pravidla rozpoznávání z praxe:",
+    "- Svazek modrých vodičů na držáku v ER je vždy připravená pozice pro montáž přijímače HDO (ne nepřipojený vývod).",
+    "- Indukční elektroměr se dvěma počítadly znamená dvoutarifové měření.",
+    "- Malý přístroj na samostatném držáku vedle elektroměru je obvykle přijímač HDO.",
+    "- Jednopólový jistič vedle hlavního jističe je obvykle jistič spínacího prvku (HDO).",
+    "Uváděj jen to, co je na fotce skutečně vidět. Hodnotu jističe uveď jen tehdy, když je potisk čitelný, jinak null. Co nejde poznat, označ jako nezjisteno.",
+    "Do pole polozky dávej jen body kontroly, které lze z fotky posoudit s vysokou jistotou (např. materiál desky, snímatelné kryty, krytí podle umístění, upevnění). Rozměry, výšky a průřezy vodičů z fotky neposuzuj.",
+    "Pole duvod a popis piš česky, stručně (jedna věta)."].join("\n");
+  const text="Zakázka: "+(S.mode==="montaz"?"montáž / výměna elektroměru":"změna sazby na "+S.sazbaNa)+". Typ objektu: "+S.objekt+".\n"+
+    "Body kontroly (id: text):\n"+items.map(x=>x.id+": "+x.t).join("\n")+
+    "\n\nPopiš rozváděč na fotce a vyplň rozpoznané údaje.";
+  return {system,text,schema};
+}
+let pendingFoto=null;
+function renderPhoto(){
+  $("photo-btns").hidden=!NATIVE; $("key-card").hidden=!NATIVE;
+  if(!NATIVE){$("photo-hint").textContent="Rozpoznávání z fotky je dostupné v aplikaci pro iPhone.";return;}
+  const r=pendingFoto; const box=$("photo-res");
+  if(!r){box.innerHTML="";return;}
+  const rows=[];const add=(k,v)=>{if(v&&v!=="nezjisteno")rows.push([k,v])};
+  add("Fáze",LBL.faze[r.faze]);add("Hlavní jistič",r.jistic_a?(r.jistic_a+" A"+(r.charakteristika!=="nezjisteno"?", char. "+r.charakteristika:"")):"");
+  add("Umístění",LBL.umisteni[r.umisteni]);add("Elektroměr",LBL.typ_elektromeru[r.typ_elektromeru]);add("Tarif",LBL.tarif[r.tarif]);add("HDO",LBL.hdo[r.hdo]);
+  const pol=(r.polozky||[]).filter(p=>steps().some(x=>x.it.id===p.id));
+  box.innerHTML='<div class="sug"><strong>Návrh z fotky</strong><p style="margin:0">'+esc(r.popis||"")+'</p>'+
+    (rows.length?'<dl>'+rows.map(x=>'<dt>'+esc(x[0])+'</dt><dd>'+esc(x[1])+'</dd>').join("")+'</dl>':'')+
+    '<p class="hint" style="margin:0">Předvyplní se '+pol.length+' bodů kontroly ('+pol.filter(p=>p.odpoved==="fail").length+' jako závada).</p>'+
+    '<div class="actions"><button class="btn" id="b-apply">Použít návrh</button><button class="btn ghost" id="b-drop">Zahodit</button></div></div>';
+}
+function applyPhoto(){
+  const r=pendingFoto;if(!r)return;
+  if(r.faze!=="nezjisteno")S.faze=r.faze;
+  if(r.jistic_a)S.jistic=r.jistic_a;
+  if(r.charakteristika!=="nezjisteno")S.char=r.charakteristika;
+  if(r.umisteni==="vnitrni")S.umisteni="vnitrni"; else if(r.umisteni==="venkovni"&&S.umisteni==="vnitrni")S.umisteni="venkovni";
+  S.sug=S.sug||{};
+  (r.polozky||[]).forEach(p=>{if(steps().some(x=>x.it.id===p.id)){S.ans[p.id]=p.odpoved;S.sug[p.id]=p.duvod;}});
+  S.foto={popis:[(S.foto&&S.foto.popis)||"",r.popis||""].filter(Boolean).join(" ")};
+  pendingFoto=null;bindValues();renderAll();renderPhoto();
+  $("photo-status").textContent="Návrh použit. Předvyplněné body potvrdíte v průvodci.";
+}
+window.onPhotoTaken=(b64)=>{const img=document.createElement("img");img.src="data:image/jpeg;base64,"+b64;img.alt="Fotka rozváděče";$("thumbs").appendChild(img);
+  $("photo-status").textContent="Rozpoznávám fotku… (obvykle do minuty)";};
+window.onPhotoResult=(txt)=>{try{pendingFoto=JSON.parse(txt);$("photo-status").textContent="";}catch(_){ $("photo-status").textContent="Výsledek se nepodařilo přečíst, zkuste to znovu.";}
+  setBusy(false);renderPhoto();};
+window.onPhotoError=(msg)=>{$("photo-status").textContent=msg;setBusy(false);};
+window.onPhotoCancel=()=>{setBusy(false);};
+window.onKeyState=(has)=>{$("key-state").textContent=has?"Klíč je uložený.":"Klíč zatím není uložený.";};
+function setBusy(b){$("b-cam").disabled=b;$("b-lib").disabled=b;}
+document.addEventListener("click",ev=>{const b=ev.target.closest("button");if(!b)return;
+  if(b.id==="b-cam"||b.id==="b-lib"){setBusy(true);$("photo-status").textContent="";window.webkit.messageHandlers.photo.postMessage({source:b.id==="b-cam"?"camera":"library",request:photoRequest()});}
+  if(b.id==="b-apply")applyPhoto();
+  if(b.id==="b-drop"){pendingFoto=null;renderPhoto();}
+  if(b.id==="b-key"){window.webkit.messageHandlers.setKey.postMessage($("apikey").value);$("apikey").value="";}
+  if(b.id==="b-key-del"){window.webkit.messageHandlers.setKey.postMessage("");}
+});
 
 /* ---------- boot ---------- */
 const NATIVE=!!(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.share);
@@ -481,7 +581,7 @@ if(NATIVE)$("b-copy").textContent="Sdílet protokol";
 fillTariffs();
 const saved=store().cur; if(saved&&typeof saved==="object")Object.assign(S,saved);
 else{ /* ukázkový stav: rozpracovaná kontrola */ S.adresa="Ukázka – Lipová 12, Kolín"; }
-bindInputs(); renderAll(); renderHist();
+bindInputs(); renderAll(); renderHist(); renderPhoto(); if(NATIVE)window.webkit.messageHandlers.hasKey.postMessage("");
 })();
 </script>
 </body></html>
