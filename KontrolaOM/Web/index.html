@@ -340,7 +340,7 @@ const TAR={
 };
 const S={mode:"montaz",faze:"3",char:"B",jistic:25,predj:32,objekt:"rd",umisteni:"venkovni",vyska:1300,erRok:"stary",zasah:"novy",fzm:"",jzm:"",em:"klasik",vyroba:"ne",vyrKw:"",vyrNav:"ne",vyrA:"",sazbaZ:"D02d",sazbaNa:"D25d",ean:"",adresa:"",ans:{},view:"udaje",step:0,sug:{},foto:null};
 const two=()=>!!(TAR[S.sazbaNa]&&TAR[S.sazbaNa].two);
-const sp=()=>two()&&!(TAR[S.sazbaNa].nosp&&S.em==="amm");
+const sp=()=>two()&&!(TAR[S.sazbaNa].nosp&&(S.em==="amm"||S.em==="typb"));
 const z1T=()=>!!(TAR[S.sazbaZ]&&!TAR[S.sazbaZ].two);
 const tarOk=()=>S.mode==="sazba";
 const j=()=>Number(S.jistic)||0;
@@ -535,7 +535,7 @@ function renderTop(){
    if(A.includes("porucha"))b.push(["info","Při výměně prvků při poruše musí PP nn splňovat jen měněný prvek. Ostatní body označte jako Netýká se."]);
    if(S.mode==="sazba"&&S.fzm==="f13"&&S.faze!=="3")b.push(["warn","Změna na 3F: nastavte nahoře Počet fází na 3f (cílový stav)."]);
    if(S.mode==="sazba"&&S.fzm==="f31"&&S.faze!=="1")b.push(["warn","Změna na 1F: nastavte nahoře Počet fází na 1f (cílový stav)."]);}
-  if(two()&&TAR[S.sazbaNa].nosp)b.push(["info",S.em==="amm"?"Sazba "+S.sazbaNa+" s elektroměrem AMM: spínací prvek (HDO) není nutné osazovat.":"Sazba "+S.sazbaNa+": bez spínacího prvku jen s elektroměrem AMM. S tímto elektroměrem je nutné osadit HDO."]);
+  if(two()&&TAR[S.sazbaNa].nosp)b.push(["info",(S.em==="amm"||S.em==="typb")?"Sazba "+S.sazbaNa+" s elektroměrem "+(S.em==="amm"?"AMM":"typu B")+": spínací prvek (HDO) není nutné osazovat.":"Sazba "+S.sazbaNa+": bez spínacího prvku jen s elektroměrem AMM nebo typu B. S klasickým elektroměrem je nutné osadit HDO."]);
   if(S.mode==="sazba"&&TAR[S.sazbaZ]&&!TAR[S.sazbaZ].two&&two())b.push(["info",sp()?"Přechod z jednotarifu na dvoutarif: je nutný spínací prvek, blokování a dvoutarifový EM.":"Přechod z jednotarifu na dvoutarif: je nutný dvoutarifový EM."]);
   if(two()&&!sp())b.push(["info","Sazba "+S.sazbaNa+": spínací prvek není nutné osazovat."]);
   $("banners").innerHTML=b.map(x=>'<div class="banner '+x[0]+'">'+esc(x[1])+'</div>').join("");
