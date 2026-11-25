@@ -212,7 +212,7 @@ footer{font-size:.78rem;color:var(--muted);padding-block:4px 24px;text-align:cen
         <div class="seg" id="char"><button id="char-B" data-v="B">B</button><button id="char-C" data-v="C">C</button><button id="char-D" data-v="D">D</button></div></div>
     </div>
     <div class="grid2">
-      <label class="f">Hlavní jistič před EM (A)<input id="jistic" type="number" inputmode="numeric" min="1" step="1"></label>
+      <label class="f"><span id="jistic-t">Hlavní jistič před EM (A)</span><input id="jistic" type="number" inputmode="numeric" min="1" step="1"></label>
     </div>
     <div class="grid2">
       <label class="f">Typ objektu<select id="objekt">
@@ -251,6 +251,7 @@ footer{font-size:.78rem;color:var(--muted);padding-block:4px 24px;text-align:cen
       <label class="f" id="sazbaZ-l">Současná sazba<select id="sazbaZ"></select></label>
       <label class="f"><span id="sazbaNa-t">Požadovaná sazba</span><select id="sazbaNa"></select></label>
       <label class="f" id="fzm-l">Změna počtu fází<select id="fzm"><option value="">Beze změny</option><option value="f13">Současně z 1F na 3F</option><option value="f31">Současně z 3F na 1F</option></select></label>
+      <label class="f" id="jzm-l">Změna hlavního jističe<select id="jzm"><option value="">Beze změny</option><option value="zvys">Navýšení hodnoty</option><option value="sniz">Snížení hodnoty</option></select></label>
     </div>
     <div id="calc" class="calc" aria-live="polite"></div>
     <div id="banners" style="display:flex;flex-direction:column;gap:8px"></div>
@@ -337,7 +338,7 @@ const TAR={
   D57d:{n:"D57d – tepelné čerpadlo (NT 20 h)",two:true,blok:["PV"],tc:true,cond:"Vytápění tepelným čerpadlem. Kompresor TČ blokován být nemusí, vodič ATC je volitelný."},
   D61d:{n:"D61d – víkendová (rekreační objekty)",two:true,nosp:true,blok:[],cond:"Víkendový režim pro rekreační objekty."}
 };
-const S={mode:"montaz",faze:"3",char:"B",jistic:25,predj:32,objekt:"rd",umisteni:"venkovni",vyska:1300,erRok:"stary",zasah:"novy",fzm:"",em:"klasik",vyroba:"ne",vyrKw:"",vyrNav:"ne",vyrA:"",sazbaZ:"D02d",sazbaNa:"D25d",ean:"",adresa:"",ans:{},view:"udaje",step:0,sug:{},foto:null};
+const S={mode:"montaz",faze:"3",char:"B",jistic:25,predj:32,objekt:"rd",umisteni:"venkovni",vyska:1300,erRok:"stary",zasah:"novy",fzm:"",jzm:"",em:"klasik",vyroba:"ne",vyrKw:"",vyrNav:"ne",vyrA:"",sazbaZ:"D02d",sazbaNa:"D25d",ean:"",adresa:"",ans:{},view:"udaje",step:0,sug:{},foto:null};
 const two=()=>!!(TAR[S.sazbaNa]&&TAR[S.sazbaNa].two);
 const sp=()=>two()&&!TAR[S.sazbaNa].nosp;
 const z1T=()=>!!(TAR[S.sazbaZ]&&!TAR[S.sazbaZ].two);
@@ -376,8 +377,9 @@ const VPA={
 function acts(){
   if(S.mode==="montaz")return S.vyroba==="ano"?["novy","vyr2"]:["novy"];
   const a=[]; const z=TAR[S.sazbaZ],n=TAR[S.sazbaNa];
-  if(z&&n){ if(!z.two&&n.two)a.push("t12"); else if(z.two&&!n.two)a.push("t21"); else if(z.two&&n.two)a.push("t22"); else a.push("t11"); }
+  if(z&&n&&!(S.sazbaZ===S.sazbaNa&&S.jzm)){ if(!z.two&&n.two)a.push("t12"); else if(z.two&&!n.two)a.push("t21"); else if(z.two&&n.two)a.push("t22"); else a.push("t11"); }
   if(S.fzm)a.push(S.fzm);
+  if(S.jzm)a.push(S.jzm);
   return a;
 }
 function typbTol(){return S.mode==="sazba"&&S.em==="typb"&&!(S.vyroba==="ano"&&S.vyrNav==="ano");}
@@ -520,11 +522,11 @@ function renderTop(){
   document.querySelectorAll(".modes button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.mode===S.mode));
   document.querySelectorAll("#faze button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.v===S.faze));
   document.querySelectorAll("#char button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.v===S.char));
-  $("sazba-box").hidden=false; $("sazbaZ-l").hidden=$("fzm-l").hidden=S.mode!=="sazba"; $("sazbaNa-t").textContent=S.mode==="sazba"?"Požadovaná sazba":"Distribuční sazba"; $("zasah-l").hidden=true; $("vyroba-box").hidden=S.vyroba!=="ano"; $("vyrNav-l").hidden=S.mode!=="sazba";
+  $("sazba-box").hidden=false; $("sazbaZ-l").hidden=$("fzm-l").hidden=$("jzm-l").hidden=S.mode!=="sazba"; $("jistic-t").textContent=S.mode==="sazba"&&S.jzm==="zvys"?"Hlavní jistič po navýšení (A)":S.mode==="sazba"&&S.jzm==="sniz"?"Hlavní jistič po snížení (A)":"Hlavní jistič před EM (A)"; $("sazbaNa-t").textContent=S.mode==="sazba"?"Požadovaná sazba":"Distribuční sazba"; $("zasah-l").hidden=true; $("vyroba-box").hidden=S.vyroba!=="ano"; $("vyrNav-l").hidden=S.mode!=="sazba";
   const c=[]; if(j()){c.push("Rezervovaný příkon: "+S.faze+"×"+j()+" A ≈ "+(S.faze==="3"?(j()*0.4*Math.sqrt(3)).toFixed(1):(j()*0.23).toFixed(1))+" kW")}
   $("calc").innerHTML=c.map(esc).join("<br>"); $("calc").hidden=!c.length;
   const b=[]; if(j()>80)b.push(["bad","Jistič nad 80 A: OM vyžaduje nepřímé měření s MTP. Tato pomůcka ho zatím nepokrývá."]);
-  if(S.mode==="sazba"&&S.sazbaZ===S.sazbaNa)b.push(["warn","Současná a požadovaná sazba jsou stejné."]);
+  if(S.mode==="sazba"&&S.sazbaZ===S.sazbaNa&&!S.jzm)b.push(["warn","Současná a požadovaná sazba jsou stejné. Pokud jde jen o změnu hlavního jističe, vyberte ji v poli Změna hlavního jističe."]);
   {const R=REQ(),A=acts().filter(k=>VPA[k]);
    if(maskTol())b.push(["info","Elektroměr typu B při změně sazby: krycí maska není závada (závadou je jen při navýšení výkonu FVE). Ostatní podmínky platí beze změny."]);
    if(spolEx())b.push(["info","Společný ER s již osazenými elektroměry: krycí maska nebrání montáži EM ani změně sazby (výjimka). Ostatní podmínky platí beze změny."]);
@@ -576,7 +578,7 @@ function firstOpen(){const st=steps();const i=st.findIndex(x=>!S.ans[x.it.id]);r
 /* ---------- protocol, history ---------- */
 function protocol(){
   const e=evaluate(); const d=new Date();
-  const L=["PROTOKOL KONTROLY ODBĚRNÉHO MÍSTA","Datum: "+d.toLocaleString("cs-CZ"),"Elektroměr: "+({amm:"AMM",typb:"typ B"}[S.em]||"klasický"),"Zakázka: "+(S.mode==="montaz"?"Montáž elektroměru, sazba "+S.sazbaNa:"Změna sazby "+S.sazbaZ+" → "+S.sazbaNa),"Činnost (VP_A): "+acts().filter(k=>VPA[k]).map(k=>VPA[k].n).join(" + ")+(spolEx()?" (společný ER s osazenými EM – maska tolerována)":maskTol()?" (EM typu B, změna sazby bez navýšení FVE – maska tolerována)":""),
+  const L=["PROTOKOL KONTROLY ODBĚRNÉHO MÍSTA","Datum: "+d.toLocaleString("cs-CZ"),"Elektroměr: "+({amm:"AMM",typb:"typ B"}[S.em]||"klasický"),"Zakázka: "+(S.mode==="montaz"?"Montáž elektroměru, sazba "+S.sazbaNa:(S.sazbaZ===S.sazbaNa&&S.jzm?"Sazba "+S.sazbaNa+" beze změny":"Změna sazby "+S.sazbaZ+" → "+S.sazbaNa)+(S.jzm?", "+(S.jzm==="zvys"?"navýšení":"snížení")+" hlavního jističe na "+S.faze+"×"+S.jistic+" A":"")),"Činnost (VP_A): "+acts().filter(k=>VPA[k]).map(k=>VPA[k].n).join(" + ")+(spolEx()?" (společný ER s osazenými EM – maska tolerována)":maskTol()?" (EM typu B, změna sazby bez navýšení FVE – maska tolerována)":""),
    "EAN: "+(S.ean||"–"),"Adresa: "+(S.adresa||"–"),"Jistič: "+S.faze+"×"+(j()||"–")+" A, char. "+S.char,
    "","VÝSLEDEK: "+e.v.t.toUpperCase()];
   if(e.fails.length){L.push("","Závady:");e.fails.forEach(x=>L.push(" - "+val(x.it.q)+(x.m?" ("+x.m+")":"")+" ["+x.it.ref+"]"));}
@@ -596,7 +598,7 @@ function renderHist(){const h=(store().hist||[]);const box=$("hist");
 
 /* ---------- events ---------- */
 function bindInputs(){
-  ["ean","adresa","jistic","objekt","umisteni","erRok","zasah","vyroba","vyrKw","vyrNav","sazbaZ","sazbaNa","fzm","em"].forEach(id=>{
+  ["ean","adresa","jistic","objekt","umisteni","erRok","zasah","vyroba","vyrKw","vyrNav","sazbaZ","sazbaNa","fzm","jzm","em"].forEach(id=>{
     const el=$(id); el.value=S[id]??(id==="vyrNav"?"ne":""); el.addEventListener(el.tagName==="SELECT"?"change":"input",()=>{S[id]=el.value;if(id==="fzm"&&el.value)S.faze=el.value==="f13"?"3":"1";if(id==="zasah"&&(el.value==="f13"||el.value==="f31"))S.faze=el.value==="f13"?"3":"1";renderAll();});
   });
 }
@@ -626,7 +628,7 @@ document.addEventListener("click",ev=>{
   if(b.id==="b-new"){Object.assign(S,{ean:"",adresa:"",ans:{},step:0,sug:{},foto:null});$("thumbs").innerHTML="";$("photo-status").textContent="";if(NATIVE){window.webkit.messageHandlers.newCheck.postMessage("");Object.keys(photoSlots).forEach(k=>delete photoSlots[k]);renderPhoto();}bindValues();go("udaje");return;}
   if(b.dataset.i!==undefined&&b.closest("#hist")){const x=(store().hist||[])[+b.dataset.i];if(x){Object.assign(S,JSON.parse(JSON.stringify(x.s)));if(S.zasah==="vymena")S.zasah="novy";bindValues();go("vysledek");}return;}
 });
-function bindValues(){["ean","adresa","jistic","objekt","umisteni","erRok","zasah","vyroba","vyrKw","vyrNav","sazbaZ","sazbaNa","fzm","em"].forEach(id=>{$(id).value=S[id]??"";});}
+function bindValues(){["ean","adresa","jistic","objekt","umisteni","erRok","zasah","vyroba","vyrKw","vyrNav","sazbaZ","sazbaNa","fzm","jzm","em"].forEach(id=>{$(id).value=S[id]??"";});}
 
 /* ---------- fotka rozváděče ---------- */
 const LBL={faze:{"1":"1f","3":"3f"},umisteni:{vnitrni:"vnitřní",venkovni:"venkovní"},typ_elektromeru:{elektronicky:"elektronický",indukcni:"indukční (starý)"},druh_em:{klasik:"klasický",typb:"typ B",amm:"AMM"},
@@ -658,7 +660,7 @@ function photoRequest(){
     "Do pole polozky dávej jen body kontroly, které lze z fotky posoudit s vysokou jistotou (např. materiál desky, snímatelné kryty, krytí podle umístění, upevnění). Rozměry, výšky a průřezy vodičů z fotky neposuzuj.",
     "U položek znamená odpoved ok stav bez závady (vyhovuje PP nn) a fail závadu. Pozor: bod k4 je formulován jako zjištění masky, takže maska, snímatelný kryt, lepené plexisklo nebo fólie = fail.",
     "Pole duvod a popis piš česky, stručně (jedna věta)."].join("\n");
-  const text="Zakázka: "+(S.mode==="montaz"?"montáž elektroměru, sazba "+S.sazbaNa:"změna sazby na "+S.sazbaNa+(S.vyroba==="ano"?(S.vyrNav==="ano"?", s navýšením výkonu FVE":", bez navýšení výkonu FVE"):""))+". Elektroměr: "+({amm:"AMM",typb:"typ B"}[S.em]||"klasický")+". Typ objektu: "+S.objekt+".\n"+
+  const text="Zakázka: "+(S.mode==="montaz"?"montáž elektroměru, sazba "+S.sazbaNa:"změna sazby na "+S.sazbaNa+(S.jzm?(S.jzm==="zvys"?", navýšení":", snížení")+" hlavního jističe na "+S.faze+"×"+S.jistic+" A":"")+(S.vyroba==="ano"?(S.vyrNav==="ano"?", s navýšením výkonu FVE":", bez navýšení výkonu FVE"):""))+". Elektroměr: "+({amm:"AMM",typb:"typ B"}[S.em]||"klasický")+". Typ objektu: "+S.objekt+".\n"+
     "Dostaneš 3 fotky: celkové umístění rozváděče, detail rozváděče a detail jističů. Hodnotu a charakteristiku jističe čti hlavně z detailu jističů.\n"+
     "Body kontroly (id: text):\n"+items.map(x=>x.id+": "+x.t).join("\n")+
     "\n\nPopiš rozváděč na fotce a vyplň rozpoznané údaje.";
