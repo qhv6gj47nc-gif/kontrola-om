@@ -431,7 +431,6 @@ const SECS=[
   {id:"j10",col:"jist",q:"Hodnota jističe odpovídá rezervovanému příkonu ve smlouvě / žádosti",hl:()=>"Zadáno: "+(S.faze==="3"?"3×":"1×")+(S.jistic||"?")+" A, charakteristika "+S.char,ref:"PP nn 1.2, 3.4.1"}
  ]},
  {id:"vodice",t:"Vodiče a zapojení",items:[
-  {id:"w2",col:"vod",q:"Lanovaná zakončení s lisovanými dutinkami (ne cínovaná), silové dutinky s izolačním límcem min. 18 mm",ref:"PP nn 3.4.2"},
   {id:"w4",col:"vod",q:"Přívodní a vývodní fázové vodiče měřeného OM mají stejný průřez",ref:"PP nn 3.5.2"},
   {id:"w5",col:"vod",q:"Správný sled fází L1, L2, L3",when:()=>S.faze==="3",ref:"PP nn 3.2"},
   {id:"w6",col:"vod",get rec(){return REQ().tol},q:"Barvy vodičů: L1 hnědá, L2 černá, L3 šedá, N světle modrá, PEN zelenožlutá",ref:"VP_01 schéma 1/2"},
