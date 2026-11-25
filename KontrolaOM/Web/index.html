@@ -138,6 +138,7 @@ textarea{width:100%;min-height:160px;font:500 .8rem var(--f-mono);color:var(--fg
 .hist .tag{font-size:.75rem;font-weight:600;color:var(--muted);white-space:nowrap}
 .docs a{color:var(--accent);text-decoration:none;font-weight:500}
 .docs li{margin-bottom:6px}
+.docs-body{padding:0 16px 16px;display:flex;flex-direction:column;gap:12px}
 
 /* guide */
 .start{min-height:56px;font-size:1.08rem;width:100%;border-radius:16px;box-shadow:0 6px 20px rgba(242,79,0,.3)}
@@ -299,9 +300,11 @@ footer{font-size:.78rem;color:var(--muted);padding-block:4px 24px;text-align:cen
     <div class="hist" id="hist"></div>
   </section>
 
-  <section class="card docs" aria-labelledby="h-d">
-    <h2 id="h-d">Zdrojové dokumenty</h2>
+  <details class="sec docs" id="docs">
+    <summary><span class="sec-title" id="h-d">Zdrojové dokumenty</span><svg class="chev" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="2"/></svg></summary>
+    <div class="docs-body">
     <ul style="margin:0;padding-left:18px">
+      <li><a href="strom-pravidel.html">Strom pravidel aplikace</a> (jak aplikace vybírá body a vyhodnocuje závady)</li>
       <li><a href="https://www.cezdistribuce.cz/file/edee/distribuce/ppnn/2026/pripojovaci_podminky_nn.pdf" target="_blank" rel="noopener">Připojovací podmínky nn (PP nn)</a></li>
       <li><a href="https://www.cezdistribuce.cz/file/edee/distribuce/ppnn/2026/vp_b_pripojovaci_podminky.pdf" target="_blank" rel="noopener">VP_B Doplňující technické informace ke schématům</a></li>
       <li><a href="https://www.cezdistribuce.cz/file/edee/distribuce/ppnn/20250901/vp_a-tabulka-zavaznosti-dle-nejcastejsich-cinnosti.xlsx" target="_blank" rel="noopener">VP_A Tabulka závaznosti dle činností (XLSX)</a></li>
@@ -310,7 +313,8 @@ footer{font-size:.78rem;color:var(--muted);padding-block:4px 24px;text-align:cen
       <li><a href="https://www.cezdistribuce.cz/cs/pro-zakazniky/potrebuji-vyresit/ceny-a-podminky/pripojovaci-podminky/pripojovaci-podminky-nn" target="_blank" rel="noopener">Stránka připojovacích podmínek nn</a></li>
     </ul>
     <p class="hint">Pomůcka nenahrazuje PP nn ani cenové rozhodnutí ERÚ. Podmínky nároku na sazbu ověřte v aktuálním cenovém rozhodnutí. Nepřímé měření (nad 80 A), část 3.6–3.9 a kapitola 4 (výrobny) jsou zatím pokryty jen orientačně.</p>
-  </section>
+    </div>
+  </details>
   </div>
   <footer>Podle Připojovacích podmínek nn ČEZ Distribuce (platnost od 1. 9. 2025) a tabulky závaznosti VP_A<br>Data se ukládají jen v tomto zařízení</footer>
 </main>

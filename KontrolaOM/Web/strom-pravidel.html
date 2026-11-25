@@ -1,0 +1,256 @@
+<!doctype html><html lang="cs"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>:root{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}body{margin:0;font:14px system-ui}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>Strom pravidel Kontrola OM</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+
+<style>
+/* Layout: jeden sloupec, nahoře výběr úkonu, pod ním strom bodů a pod ním rozhodovací větve */
+:root{
+  --bg:#f6f4f2;--surface:#ffffff;--fg:#1d1a18;--muted:#6b635d;--line:#d9d2cc;
+  --accent:#f24f00;--accent-soft:#fde5d9;--ok:#1f7a4a;--ok-soft:#dcf1e4;--bad:#c62f1f;--bad-soft:#fbe0dc;--warn:#9a6a00;--warn-soft:#f8ecc9;--na:#8d857f;
+  --f-sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;--f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#171412;--surface:#211d1a;--fg:#efe9e4;--muted:#a59b93;--line:#3a332e;
+  --accent:#ff6a24;--accent-soft:#3d2315;--ok:#5cc58b;--ok-soft:#173225;--bad:#ff7a6a;--bad-soft:#3c1d19;--warn:#e2b54a;--warn-soft:#352a10;--na:#857c75;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#171412;--surface:#211d1a;--fg:#efe9e4;--muted:#a59b93;--line:#3a332e;
+  --accent:#ff6a24;--accent-soft:#3d2315;--ok:#5cc58b;--ok-soft:#173225;--bad:#ff7a6a;--bad-soft:#3c1d19;--warn:#e2b54a;--warn-soft:#352a10;--na:#857c75;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font:15px/1.5 var(--f-sans);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 48px}
+.wrap{max-width:880px;margin:0 auto;display:flex;flex-direction:column;gap:28px}
+h1{font-size:1.7rem;line-height:1.2;margin:0;text-wrap:balance;font-weight:700}
+h1 b{color:var(--accent)}
+h2{font-size:1.15rem;margin:0 0 10px;text-wrap:balance}
+h3{font-size:1rem;margin:0}
+p{margin:0;max-width:68ch}
+.lead{color:var(--muted)}
+.eyebrow{font:500 .72rem var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+section{display:flex;flex-direction:column;gap:12px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px}
+/* strom */
+.tree,.tree ul{list-style:none;margin:0;padding:0}
+.tree ul{margin-left:12px;padding-left:18px;border-left:1.5px solid var(--line)}
+.tree li{position:relative;padding:5px 0;min-width:0;overflow-wrap:anywhere}
+.tree ul>li::before{content:"";position:absolute;left:-18px;top:17px;width:14px;border-top:1.5px solid var(--line)}
+.tree ul>li:last-child::after{content:"";position:absolute;left:-20px;top:18px;bottom:0;width:4px;background:var(--surface)}
+.node{display:inline-flex;flex-wrap:wrap;align-items:baseline;gap:6px 8px;min-width:0}
+.q{font-weight:600}
+.k{font:500 .75rem var(--f-mono);color:var(--muted)}
+.ref{font:.75rem var(--f-mono);color:var(--muted)}
+.chip{font:500 .72rem var(--f-sans);padding:1px 8px;border-radius:10px;border:1px solid transparent;max-width:100%;overflow-wrap:anywhere}
+.c-ok{background:var(--ok-soft);color:var(--ok)}
+.c-bad{background:var(--bad-soft);color:var(--bad)}
+.c-warn{background:var(--warn-soft);color:var(--warn)}
+.c-acc{background:var(--accent-soft);color:var(--accent)}
+.c-cond{border-color:var(--line);color:var(--muted)}
+.c-auto{background:var(--fg);color:var(--bg)}
+/* výběr úkonu */
+.tabs{display:flex;flex-wrap:wrap;gap:6px}
+.tabs button{font:500 .85rem var(--f-sans);color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:99px;padding:6px 12px;cursor:pointer}
+.tabs button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+.tabs button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.grp{display:flex;flex-direction:column;gap:6px}
+.cols{display:flex;flex-wrap:wrap;gap:6px}
+.col{font-size:.8rem;padding:3px 9px;border-radius:6px;border:1px solid var(--line)}
+.col.on{border-color:var(--accent);color:var(--accent);font-weight:600}
+.col.off{color:var(--na);text-decoration:line-through}
+.sec-t{font-weight:700;color:var(--accent)}
+.skip{color:var(--na)}
+.note{font-size:.85rem;color:var(--muted)}
+.dec .q{font-weight:600}
+.res{font-weight:600}
+.legend{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:.8rem;color:var(--muted)}
+footer{font-size:.8rem;color:var(--muted)}
+.back{color:var(--accent);font-weight:600;text-decoration:none;font-size:.95rem}
+@media (max-width:480px){h1{font-size:1.4rem}.tree ul{margin-left:6px;padding-left:14px}.tree ul>li::before{left:-14px;width:10px}.tree ul>li:last-child::after{left:-16px}}
+</style>
+
+<div class="wrap">
+<header style="display:flex;flex-direction:column;gap:8px">
+  <a class="back" href="index.html" onclick="if(history.length>1){history.back();return false}">‹ Zpět do aplikace</a>
+  <span class="eyebrow">Kontrola OM · verze aplikace 1.30</span>
+  <h1>Strom pravidel <b>Kontrola OM</b></h1>
+  <p class="lead">Přesně ta pravidla, podle kterých aplikace teď vybírá body kontroly a vyhodnocuje závady. Nahoře vyber úkon, strom pod ním ukáže, co se kontroluje a za jakých podmínek.</p>
+</header>
+
+<section>
+  <h2>1. Jak aplikace určí úkon (činnost dle VP_A)</h2>
+  <div class="card"><ul class="tree" id="root-tree"></ul></div>
+</section>
+
+<section>
+  <h2>2. Body kontroly podle úkonu</h2>
+  <div class="tabs" id="tabs" role="group" aria-label="Úkon"></div>
+  <div class="card grp" id="cols-card"></div>
+  <div class="legend">
+    <span class="chip c-auto">auto</span> aplikace vyhodnotí sama
+    <span class="chip c-cond">podmínka</span> zobrazí se jen když platí
+    <span class="chip c-warn">doporučení</span> nesplnění není závada
+  </div>
+  <div class="card"><ul class="tree" id="item-tree"></ul></div>
+</section>
+
+<section>
+  <h2>3. Rozhodovací pravidla</h2>
+  <div class="card grp"><h3>Krycí maska</h3><ul class="tree" id="t-mask"></ul></div>
+  <div class="card grp"><h3>Spínací prvek (HDO) a jistič pro něj</h3><ul class="tree" id="t-sp"></ul></div>
+  <div class="card grp"><h3>Hlavní jistič</h3><ul class="tree" id="t-hj"></ul></div>
+  <div class="card grp"><h3>Výrobna (FVE, baterie)</h3><ul class="tree" id="t-fve"></ul></div>
+  <div class="card grp"><h3>Výsledek kontroly</h3><ul class="tree" id="t-res"></ul></div>
+  <div class="card grp"><h3>Rozpoznání z fotek</h3><ul class="tree" id="t-foto"></ul></div>
+</section>
+
+<footer>Zdroj: PP nn (platnost od 1. 9. 2025), tabulka závaznosti VP_A (10/2023), VP_B a pravidla z praxe doplněná montérem. Pravidla z praxe jsou označena „praxe“.</footer>
+</div>
+
+<script>
+const D={"cols":[["rev","revizní zpráva"],["hdv","HDV"],["odb","odbočky k elektroměrům"],["um","umístění ER"],["maska","ER bez masky"],["konstr","konstrukce a provedení ER"],["jist","jističe"],["vod","vodiče"],["mtp","MTP"],["vyp","vypínací prvek u výrobny"],["sch","zapojení dle schémat"]],"vpa":{"novy":{"n":"Nový odběr / OM po ukončení rezervace","r":[1,1,1,1,1,1,1,1,1,0,1]},"vyr2":{"n":"Nová výrobna / mikrozdroj s vazbou na OM","r":[1,1,0,0,1,1,1,1,1,1,1],"tol":1},"t12":{"n":"Změna sazby z jednotarifní na dvoutarifní","r":[1,1,1,0,1,1,1,1,0,1,1],"tol":1,"y":"maska"},"t21":{"n":"Změna sazby z dvoutarifní na jednotarifní","r":[0,0,0,0,0,1,1,0,0,0,0],"y":"jist"},"t22":{"n":"Změna sazby z dvoutarifní na jinou dvoutarifní","r":[1,1,1,0,0,1,1,0,0,1,1]},"t11":{"n":"Změna jednotarifní sazby","r":[0,0,0,0,0,1,1,0,0,0,0]},"f13":{"n":"Změna počtu fází z 1F na 3F","r":[1,1,1,0,1,1,1,1,0,1,1],"y":"maska"},"f31":{"n":"Změna počtu fází z 3F na 1F","r":[1,1,1,0,1,1,1,1,0,1,1],"tol":1,"y":"maska"},"zvys":{"n":"Zvýšení hodnoty hlavního jističe","r":[1,1,1,0,0,1,1,1,1,1,0],"tol":1},"sniz":{"n":"Snížení hodnoty hlavního jističe","r":[0,0,0,0,0,1,1,0,1,1,0]}},"secs":[{"id":"pristup","t":"Umístění a přístup k ER","items":[{"id":"p1","col":"um","q":"ER je trvale přístupný pracovníkům PDS","ref":"PP nn 3.1","auto":false,"cond":false,"rec":false},{"id":"p2","col":"um","q":"Před ER volný prostor min. 800 mm do hloubky i šířky, rovná plocha","ref":"PP nn 3.1","auto":false,"cond":false,"rec":false},{"id":"p3","col":"um","q":"Dvířka lze otevřít min. o 90°","ref":"PP nn 3.1","auto":false,"cond":false,"rec":false},{"id":"p5","col":"um","q":"ER je na hranici pozemku nebo na obvodové zdi, dvířka z veřejně přístupné strany","ref":"PP nn 3.1","auto":false,"cond":true,"rec":false},{"id":"p6","col":"um","q":"ER je na chodbě, podestě nebo v energocentru","ref":"PP nn 3.1","auto":false,"cond":true,"rec":false},{"id":"p7","col":"um","q":"Společný ER u místa připojení, přístupný z veřejného prostranství","ref":"PP nn 3.1","auto":false,"cond":true,"rec":false}]},{"id":"konstr","t":"Konstrukce rozváděče","items":[{"id":"k1","col":"konstr","q":"Typově zkoušený ER s prohlášením o shodě a značkou CE, zkratová odolnost min. 10 kA","ref":"PP nn 3.2.1","auto":false,"cond":false,"rec":false},{"id":"k2","col":"konstr","q":"Krytí odpovídá umístění","ref":"PP nn 3.2.1","auto":false,"cond":false,"rec":false},{"id":"k3","col":"konstr","q":"Přístrojová deska není dřevěná, pertinaxová ani gumonová","ref":"PP nn 3.2.1","auto":false,"cond":false,"rec":false},{"id":"k4","col":"maska","q":"V rozváděči je krycí maska (snímatelný kryt), lepené plexisklo nebo fólie","ref":"PP nn 3.2.1","auto":false,"cond":false,"rec":false},{"id":"k4s","col":"maska","q":"Jde o společný ER pro více elektroměrů, ve kterém jsou některé EM již osazeny?","ref":"PP nn 3.2.1","auto":false,"cond":true,"rec":false},{"id":"k4o","col":"maska","q":"Okénka v masce mají dostatečnou velikost: min. 160×120 mm (třífázový EM)","ref":"PP nn 3.2.1","auto":false,"cond":true,"rec":false},{"id":"k7","col":"konstr","q":"Kabelový prostor oddělen pevnou nebo plombovatelnou přepážkou","ref":"PP nn 3.2.2","auto":false,"cond":false,"rec":false},{"id":"k9","col":"konstr","q":"Více OM v jednom ER: označení a schéma zapojení","ref":"PP nn 3.2.1","auto":false,"cond":true,"rec":false}]},{"id":"vysky","t":"Prostor pro přístroje","items":[{"id":"v4","col":"um","q":"Spodní hrana venkovního ER min. 600 mm nad terénem","ref":"PP nn tab. 1","auto":false,"cond":true,"rec":false},{"id":"v5","col":"konstr","q":"Volný prostor pro elektroměr min. 200×400×160 mm (š×v×h)","ref":"PP nn tab. 2","auto":false,"cond":false,"rec":false},{"id":"v6","col":"konstr","q":"Prostor pro spínací prvek / komunikační jednotku min. 180×300×160 mm","ref":"PP nn tab. 2","auto":false,"cond":true,"rec":false},{"id":"v7","col":"konstr","q":"Je osazen jistič pro spínací prvek s dostatečnými parametry","ref":"PP nn 3.4.1","auto":false,"cond":true,"rec":false}]},{"id":"hj","t":"Hlavní jistič před elektroměrem","items":[{"id":"j1","col":null,"q":"Jmenovitý proud v řadě PDS","ref":"PP nn 3.4.1","auto":true,"cond":false,"rec":false},{"id":"j2","col":null,"q":"Jednofázový jistič max. 25 A","ref":"PP nn 3.4.1","auto":true,"cond":true,"rec":false},{"id":"j3","col":null,"q":"Přímé měření (jistič do 80 A včetně)","ref":"PP nn 3.5.1","auto":true,"cond":false,"rec":false},{"id":"j4","col":null,"q":"Charakteristika B","ref":"PP nn 3.4.1","auto":true,"cond":false,"rec":false},{"id":"j5","col":"jist","q":"Doloženo kladné stanovisko PDS k charakteristice B","ref":"PP nn 3.4.1","auto":false,"cond":true,"rec":false},{"id":"j6","col":"jist","q":"Třífázový elektroměr: hlavní jistič je třífázový (3pólový), póly nelze ovládat samostatně","ref":"PP nn 3.4.1","auto":false,"cond":false,"rec":false},{"id":"j7","col":"jist","q":"Zkratová odolnost min. 10 kA, hodnota, charakteristika a vypínací schopnost zřetelně a nezáměnně označeny","ref":"PP nn 3.4.1","auto":false,"cond":false,"rec":false},{"id":"j8","col":"jist","q":"Jistič bez dálkového ovládání a bez signalizačního kontaktu","ref":"PP nn 3.4.1","auto":false,"cond":false,"rec":false},{"id":"j9","col":"jist","q":"Montáž svisle, páčka nahoru = zapnuto, jistič plombovatelný","ref":"PP nn 3.4.1","auto":false,"cond":false,"rec":false},{"id":"j10","col":"jist","q":"Hodnota jističe odpovídá rezervovanému příkonu ve smlouvě / žádosti","ref":"PP nn 1.2, 3.4.1","auto":false,"cond":false,"rec":false}]},{"id":"vodice","t":"Vodiče a zapojení","items":[{"id":"w4","col":"vod","q":"Přívodní a vývodní fázové vodiče měřeného OM mají stejný průřez","ref":"PP nn 3.5.2","auto":false,"cond":false,"rec":false},{"id":"w5","col":"vod","q":"Správný sled fází L1, L2, L3","ref":"PP nn 3.2","auto":false,"cond":true,"rec":false},{"id":"w6","col":"vod","q":"Barvy vodičů: L1 hnědá, L2 černá, L3 šedá, N světle modrá, PEN zelenožlutá","ref":"VP_01 schéma 1/2","auto":false,"cond":false,"rec":false}]},{"id":"vyp","t":"Vypínač instalace","items":[{"id":"x1","col":null,"q":"Za elektroměrem je vypínač instalace, který galvanicky odpojí instalaci zákazníka","ref":"PP nn 3.4.3","auto":false,"cond":false,"rec":false},{"id":"x2","col":null,"q":"Jmenovitý proud vypínače min. 25 A (hodnota HJ), označení „Vypínač instalace“","ref":"PP nn 3.4.3","auto":false,"cond":false,"rec":false},{"id":"x3","col":null,"q":"Mezi EM a vypínačem není žádný přístroj zákazníka, páčka svisle nahoru = zapnuto","ref":"PP nn 3.4.3","auto":false,"cond":false,"rec":false}]},{"id":"sazba","t":"Tarif, HDO a blokování","items":[{"id":"t0","col":null,"q":"Nárok na sazbu","ref":"Cenové rozhodnutí ERÚ","auto":true,"cond":true,"rec":false},{"id":"t1","col":null,"q":"Spotřebiče pro sazbu jsou instalované a zapojené přes blokovací stykač","ref":"VP_B, ERÚ","auto":false,"cond":true,"rec":false},{"id":"t2","col":null,"q":"Samostatný spínací prvek (HDO přijímač, spínací hodiny nebo ŘJ) pro toto OM","ref":"VP_B, PP nn 3.4","auto":false,"cond":true,"rec":false},{"id":"t4","col":null,"q":"Tarif ani blokování nejsou ovládány ze spínacího prvku v jiném ER","ref":"PP nn 3.4","auto":false,"cond":true,"rec":false},{"id":"t6","col":null,"q":"AKU a TUV mají dva samostatné stykače","ref":"VP_B","auto":false,"cond":true,"rec":false},{"id":"t8","col":null,"q":"Vodiče označeny dle tab. 3 PP nn: TAR, TUV","ref":"PP nn tab. 3","auto":false,"cond":false,"rec":false},{"id":"t9","col":null,"q":"Výrobna s omezováním výkonu zapojena dle schématu 2 (vodič N 0 %)","ref":"VP_01 schéma 2","auto":false,"cond":true,"rec":false}]},{"id":"vyrsec","t":"Výrobna / akumulace","items":[{"id":"y1","col":null,"q":"Režim připojení výrobny","ref":"PP nn 1.2","auto":true,"cond":false,"rec":false},{"id":"y2","col":null,"q":"Doloženo oznámení / smlouva o připojení výrobny","ref":"PP nn 1.2, kap. 4","auto":false,"cond":false,"rec":false},{"id":"y4","col":"vyp","q":"Na výstupu z ER je doplněn vypínací prvek (OM se stávající výrobnou, přímé zapojení)","ref":"PP nn 3.4.4","auto":false,"cond":false,"rec":false},{"id":"y3","col":null,"q":"TOTAL/CENTRAL STOP: mechanický, uzamykatelný, označený vypínač, tlačítka ne na dvířkách ER","ref":"PP nn 2.6","auto":false,"cond":false,"rec":true}]}]};
+const COND={
+ p5:"objekt RD",p6:"bytový dům",p7:"chata / rekreační objekt",
+ k4:"odpověď Ano = maska je v ER, viz pravidlo Krycí maska",
+ k4s:"maska = Ano a neplatí výjimka pro typ B",k4o:"maska tolerována ve společném ER",
+ k9:"bytový dům nebo chata",v4:"venkovní ER",
+ v5:"1F a ER do 31. 12. 2025: 180×300×160 mm, jinak 200×400×160 mm",
+ v6:"montáž: dvoutarif a spínací prvek nutný · změna sazby: z jednotarifu a spínací prvek nutný",
+ v7:"stejně jako prostor pro spínací prvek",
+ j2:"jednofázový EM",j5:"charakteristika jiná než B",j6:"1F EM = 1pólový, 3F EM = 3pólový",j10:"zadaná hodnota se ukáže červeně pod otázkou",
+ w5:"třífázový EM",w6:"když VP_A toleruje barvy vodičů, je to jen doporučení",
+ x2:"min. hodnota hlavního jističe",
+ t0:"dvoutarifní sazba",t1:"dvoutarif s blokovanými spotřebiči",t2:"spínací prvek nutný",t4:"spínací prvek nutný nebo jednotarif",t6:"sazba s blokováním AKU",t8:"TAR + blokované okruhy sazby, u FVE i N 0 %",t9:"OM s výrobnou",
+ y1:"≤ 10,8 kW mikrozdroj, nad to smlouva dle kap. 4",y4:"jen když VP_A vyžaduje vypínací prvek u výrobny"
+};
+const SECW={vyp:"jen když VP_A vyžaduje konstrukci ER",sazba:"dvoutarif nebo FVE, a VP_A vyžaduje zapojení dle schémat",vyrsec:"jen OM s výrobnou"};
+const PRAX={k4s:1,k4o:1,v6:1,v7:1};
+const MODES=[
+ {k:"novy",t:"Montáž",acts:["novy"]},
+ {k:"novy+vyr2",t:"Montáž s FVE",acts:["novy","vyr2"],fve:1},
+ {k:"t12",t:"Sazba 1T → 2T",acts:["t12"]},
+ {k:"t22",t:"Sazba 2T → 2T",acts:["t22"]},
+ {k:"t21",t:"Sazba 2T → 1T",acts:["t21"]},
+ {k:"t11",t:"Sazba 1T → 1T",acts:["t11"]},
+ {k:"zvys",t:"Navýšení jističe",acts:["zvys"]},
+ {k:"sniz",t:"Snížení jističe",acts:["sniz"]},
+ {k:"f13",t:"Fáze 1F → 3F",acts:["f13"]},
+ {k:"f31",t:"Fáze 3F → 1F",acts:["f31"]}
+];
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const chip=(c,t)=>'<span class="chip '+c+'">'+esc(t)+'</span>';
+/* t = text, kids = array, cls */
+function T(n){return '<li><span class="node">'+n.h+'</span>'+(n.k&&n.k.length?'<ul>'+n.k.map(T).join("")+'</ul>':'')+'</li>';}
+const N=(h,k)=>({h,k});
+const Q=(t,k)=>N('<span class="q">'+esc(t)+'</span>',k);
+const A=(lab,res,cls,k)=>N(chip("c-cond",lab)+' <span class="res">'+esc(res)+'</span>'+(cls?" "+chip(cls,cls==="c-ok"?"OK":cls==="c-bad"?"závada":"pozor"):""),k);
+
+/* 1. root */
+document.getElementById("root-tree").innerHTML=T(Q("Režim",[
+ Q("Montáž",[A("bez FVE","Nový odběr / OM po ukončení rezervace"),A("FVE = Ano","Nový odběr + Nová výrobna / mikrozdroj s vazbou na OM")]),
+ Q("Změna sazby",[
+   Q("Sazba (současná → požadovaná)",[A("1T → 2T","Změna sazby z jednotarifní na dvoutarifní"),A("2T → 2T","Změna sazby z dvoutarifní na jinou dvoutarifní"),A("2T → 1T","Změna sazby z dvoutarifní na jednotarifní"),A("1T → 1T","Změna jednotarifní sazby"),A("stejná sazba + změna jističe","sazba se nepočítá, jen změna jističe")]),
+   Q("Změna počtu fází (přidává se)",[A("1F → 3F","Změna počtu fází z 1F na 3F"),A("3F → 1F","Změna počtu fází z 3F na 1F")]),
+   Q("Změna hlavního jističe (přidává se, praxe: počítá se jako změna sazby)",[A("navýšení","Zvýšení hodnoty hlavního jističe"),A("snížení","Snížení hodnoty hlavního jističe")]),
+   N('<span class="note">Víc činností najednou: povinné oblasti se sčítají.</span>')
+ ])
+]));
+
+/* 2. items per mode */
+function req(acts){const o={};D.cols.forEach(([c],i)=>o[c]=acts.some(a=>D.vpa[a].r[i]));
+  const vod=acts.filter(a=>D.vpa[a].r[7]);o.tol=vod.length>0&&vod.every(a=>D.vpa[a].tol);o.y=[...new Set(acts.map(a=>D.vpa[a].y).filter(Boolean))];return o;}
+function render(mk){
+  const m=MODES.find(x=>x.k===mk);const R=req(m.acts);
+  document.querySelectorAll("#tabs button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.k===mk));
+  document.getElementById("cols-card").innerHTML='<span class="eyebrow">Povinné oblasti dle VP_A · '+esc(m.acts.map(a=>D.vpa[a].n).join(" + "))+'</span><div class="cols">'+
+   D.cols.map(([c,n])=>'<span class="col '+(R[c]?"on":"off")+'">'+esc(n)+'</span>').join("")+'</div>'+
+   (R.y.length?'<p class="note">Od 1. 1. 2024 se navíc vyžaduje '+R.y.map(y=>y==="maska"?"ER bez masky (3.2.2)":"jističe dle PP nn (3.4.1)").join(" a ")+'.</p>':'')+
+   (R.tol?'<p class="note">Barvy vodičů jsou u této činnosti tolerované (jen doporučení).</p>':'');
+  const secs=D.secs.map(s=>{
+    let secOn=true;
+    if(s.id==="vyp")secOn=R.konstr;
+    if(s.id==="sazba")secOn=R.sch&&(m.k!=="t21"&&m.k!=="t11"||m.fve);
+    if(s.id==="vyrsec")secOn=!!m.fve;
+    if(s.id==="sazba"&&(m.k==="zvys"||m.k==="sniz"||m.k==="f13"||m.k==="f31"))secOn=R.sch;
+    const its=s.items.filter(it=>!it.col||R[it.col]).filter(it=>{
+      if(!m.fve&&(it.id==="t9"))return false;
+      if(m.k.startsWith("t2")&&["v6","v7"].includes(it.id))return false;
+      if(["t21","t11"].includes(m.k)&&["v6","v7","t0","t1","t2","t6"].includes(it.id))return false;
+      if(m.k==="t21"&&it.id==="v6")return false;
+      return true;});
+    if(!secOn||!its.length)return N('<span class="sec-t skip">'+esc(s.t)+'</span> '+chip("c-cond",secOn?"nic povinného":(SECW[s.id]||"nepovinné")));
+    return N('<span class="sec-t">'+esc(s.t)+'</span>'+(SECW[s.id]?" "+chip("c-cond",SECW[s.id]):""),its.map(it=>{
+      let h='<span class="k">'+it.id+'</span> <span>'+esc(it.q)+'</span>';
+      if(it.auto)h+=" "+chip("c-auto","auto");
+      if(it.rec||(it.id==="w6"&&R.tol))h+=" "+chip("c-warn","doporučení");
+      if(PRAX[it.id])h+=" "+chip("c-acc","praxe");
+      if(COND[it.id])h+=" "+chip("c-cond",COND[it.id]);
+      if(it.ref)h+=' <span class="ref">'+esc(it.ref)+'</span>';
+      return N(h);}));
+  });
+  document.getElementById("item-tree").innerHTML=secs.map(T).join("");
+  try{localStorage.setItem("strom-mode",mk)}catch(e){}
+}
+document.getElementById("tabs").innerHTML=MODES.map(m=>'<button type="button" data-k="'+m.k+'" aria-pressed="false">'+esc(m.t)+'</button>').join("");
+document.getElementById("tabs").addEventListener("click",e=>{const b=e.target.closest("button");if(b)render(b.dataset.k);});
+let start="novy";try{const s=localStorage.getItem("strom-mode");if(s&&MODES.some(m=>m.k===s))start=s}catch(e){}
+render(start);
+
+/* 3. decision trees */
+const P=chip("c-acc","praxe");
+document.getElementById("t-mask").innerHTML=T(Q("Je v ER krycí maska, snímatelný kryt, lepené plexisklo nebo fólie? (k4)",[
+ A("Ne","bez závady","c-ok"),
+ Q("Ano",[
+   N(chip("c-cond","změna sazby nebo jističe · EM typu B · bez navýšení výkonu FVE")+' <span class="res">maska tolerována, další otázky se přeskočí</span> '+chip("c-ok","OK")+" "+P),
+   Q("Jinak: Jde o společný ER, ve kterém jsou některé EM již osazeny? (k4s)",[
+     A("Ne","maska je závada","c-bad"),
+     Q("Ano: Mají okénka v masce dostatečnou velikost? 3F min. 160×120 mm, 1F min. 100×100 mm (k4o)",[
+       A("Ano","maska tolerována (montáž i změna sazby)","c-ok"),A("Ne","závada: okénka v masce jsou příliš malá","c-bad")]),
+   ]),
+   N('<span class="note">Maska se kontroluje jen u činností, kde VP_A vyžaduje ER bez masky: montáž, změna 1T → 2T, změna počtu fází. U 2T → 2T, 2T → 1T, 1T → 1T a změny jističe se neřeší.</span> '+P)
+ ])]));
+document.getElementById("t-sp").innerHTML=T(Q("Je požadovaná / zadaná sazba dvoutarifní?",[
+ A("Ne","spínací prvek se nekontroluje"),
+ Q("Ano: Je sazba D27d nebo D61d a elektroměr AMM nebo typu B?",[
+   A("Ano","spínací prvek ani jistič pro něj nejsou potřeba","c-ok"),
+   Q("Ne (ostatní sazby, nebo D27d / D61d s klasickým EM): spínací prvek je nutný",[
+     A("Montáž","prostor pro SP min. 180×300×160 mm (v6) + jistič pro SP (v7) + samostatný SP pro OM (t2)"),
+     A("Změna z jednotarifu","v6 + v7 + t2"),
+     A("Změna 2T → 2T","SP už je osazen: v6 a v7 se nekontrolují, zůstává t2 a t4")
+   ])
+ ]),
+ N('<span class="note">Jistič pro SP: 2–6 A, charakteristika B nebo C, min. 10 kA, svisle (PP nn 3.4.1).</span>')
+]));
+document.getElementById("t-hj").innerHTML=T(Q("Zadaná hodnota hlavního jističe",[
+ A("v řadě PDS (6, 10, 13, 16, 20, 25, 32, 40, 50, 63, 80 …)","OK, jinak závada","c-ok"),
+ A("1F a víc než 25 A","závada, nutné 3F připojení","c-bad"),
+ A("víc než 80 A","nepřímé měření s MTP, aplikace nepokrývá","c-bad"),
+ A("charakteristika jiná než B","jen s kladným stanoviskem PDS (j5)","c-warn"),
+ A("počet pólů","musí odpovídat EM: 1F = 1pólový, 3F = 3pólový (j6)"),
+ A("hodnota na jističi","musí sedět se zadáním, zadání se ukáže červeně (j10)")
+]));
+document.getElementById("t-fve").innerHTML=T(Q("Je na OM výrobna?",[
+ A("Ne","sekce výrobny se nezobrazí"),
+ Q("Ano",[
+   A("instalovaný výkon ≤ 10,8 kW","mikrozdroj, zjednodušené připojení","c-ok"),
+   A("instalovaný výkon > 10,8 kW","nutná smlouva o připojení dle kap. 4","c-warn"),
+   A("vždy","doložené oznámení / smlouva (y2), schéma 2 s N 0 % (t9), TOTAL STOP jako doporučení (y3)"),
+   A("VP_A vyžaduje vypínací prvek","vypínací prvek na výstupu z ER (y4)"),
+   A("změna sazby s navýšením výkonu FVE","ruší výjimku pro masku u EM typu B"),
+ ])
+]));
+document.getElementById("t-res").innerHTML=T(Q("Vyhodnocení",[
+ A("aspoň jedna závada","Nepřipraveno k montáži / ke změně sazby","c-bad"),
+ A("jen doporučení nebo nezodpovězené body","upozornění, zbývá doplnit"),
+ A("vše OK nebo Netýká se","Připraveno k montáži / ke změně sazby","c-ok"),
+ N('<span class="note">Navazující otázky (k4s, k4o) samy závadu nepočítají, mění jen výsledek bodu k4.</span>')
+]));
+document.getElementById("t-foto").innerHTML=T(Q("Druh elektroměru",[
+ A("Meter&Control ST402D, Itron SL7000","typ B"),A("Meter&Control ST402DAMM","AMM"),A("indukční nebo bez komunikace","klasický"),
+ Q("Další pravidla rozpoznání",[
+   N("Svazek modrých vodičů na držáku = připravená pozice pro HDO "+P),
+   N("Deska na dně ER zaplombovaná v rohu = přepážka kabelového prostoru "+P),
+   N("Průhledný plexi kryt přes celý ER = maska "+P),
+   N("Indukční EM se dvěma počítadly = dvoutarif · jednopólový jistič vedle HJ = jistič SP")
+ ])
+]));
+</script>
+
+</body></html>
