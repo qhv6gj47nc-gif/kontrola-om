@@ -534,19 +534,12 @@ function renderTop(){
   document.querySelectorAll("#char button").forEach(b=>b.setAttribute("aria-pressed",b.dataset.v===S.char));
   $("sazba-box").hidden=false; $("sazbaZ-l").hidden=$("fzm-l").hidden=$("jzm-l").hidden=S.mode!=="sazba"; $("jistic-t").textContent=S.mode==="sazba"&&S.jzm==="zvys"?"Hlavní jistič po navýšení (A)":S.mode==="sazba"&&S.jzm==="sniz"?"Hlavní jistič po snížení (A)":"Hlavní jistič před EM (A)"; $("sazbaNa-t").textContent=S.mode==="sazba"?"Požadovaná sazba":"Distribuční sazba"; $("zasah-l").hidden=true; $("vyroba-box").hidden=S.vyroba!=="ano"; $("vyrNav-l").hidden=S.mode!=="sazba";
   const c=[]; if(j()){c.push("Rezervovaný příkon: "+S.faze+"×"+j()+" A ≈ "+(S.faze==="3"?(j()*0.4*Math.sqrt(3)).toFixed(1):(j()*0.23).toFixed(1))+" kW")}
-  $("calc").innerHTML=c.map(esc).join("<br>"); $("calc").hidden=!c.length;
+  $("calc").innerHTML=""; $("calc").hidden=true;
   const b=[]; if(j()>80)b.push(["bad","Jistič nad 80 A: OM vyžaduje nepřímé měření s MTP. Tato pomůcka ho zatím nepokrývá."]);
   if(S.mode==="sazba"&&S.sazbaZ===S.sazbaNa&&!S.jzm)b.push(["warn","Současná a požadovaná sazba jsou stejné. Pokud jde jen o změnu hlavního jističe, vyberte ji v poli Změna hlavního jističe."]);
   {const R=REQ(),A=acts().filter(k=>VPA[k]);
-   if(maskTol())b.push(["info","Elektroměr typu B při změně sazby: krycí maska není závada (závadou je jen při navýšení výkonu FVE). Ostatní podmínky platí beze změny."]);
-   if(spolEx())b.push(["info","Společný ER s již osazenými elektroměry: krycí maska nebrání montáži EM ani změně sazby (výjimka). Ostatní podmínky platí beze změny."]);
-   if(R.hdv||R.odb)b.push(["warn","Činnost vyžaduje i "+[R.hdv?"HDV (PP nn 2.2)":"",R.odb?"odbočky k elektroměrům (PP nn 2.3)":""].filter(Boolean).join(" a ")+" podle aktuálních PP nn."]);
-   if(R.y.length)b.push(["warn","Od 1. 1. 2024 se u této činnosti vyžaduje "+[...new Set(R.y)].map(c=>c==="maska"?"ER bez masky (3.2.2)":"jističe dle PP nn (3.4.1)").join(" a ")+"."]);
-   if(A.includes("porucha"))b.push(["info","Při výměně prvků při poruše musí PP nn splňovat jen měněný prvek. Ostatní body označte jako Netýká se."]);
-   if(S.mode==="sazba"&&S.fzm==="f13"&&S.faze!=="3")b.push(["warn","Změna na 3F: nastavte nahoře Počet fází na 3f (cílový stav)."]);
-   if(S.mode==="sazba"&&S.fzm==="f31"&&S.faze!=="1")b.push(["warn","Změna na 1F: nastavte nahoře Počet fází na 1f (cílový stav)."]);}
-  if(two()&&TAR[S.sazbaNa].nosp)b.push(["info",(S.em==="amm"||S.em==="typb")?"Sazba "+S.sazbaNa+" s elektroměrem "+(S.em==="amm"?"AMM":"typu B")+": spínací prvek (HDO) není nutné osazovat.":"Sazba "+S.sazbaNa+": bez spínacího prvku jen s elektroměrem AMM nebo typu B. S klasickým elektroměrem je nutné osadit HDO."]);
-  if(S.mode==="sazba"&&TAR[S.sazbaZ]&&!TAR[S.sazbaZ].two&&two())b.push(["info",sp()?"Přechod z jednotarifu na dvoutarif: je nutný spínací prvek, blokování a dvoutarifový EM.":"Přechod z jednotarifu na dvoutarif: je nutný dvoutarifový EM."]);
+   if(S.mode==="sazba"&&S.fzm==="f13"&&S.faze!=="3")b.push(["warn","Změna na 3F: nastavte Počet fází na 3f (cílový stav)."]);
+   if(S.mode==="sazba"&&S.fzm==="f31"&&S.faze!=="1")b.push(["warn","Změna na 1F: nastavte Počet fází na 1f (cílový stav)."]);}
   $("banners").innerHTML=b.map(x=>'<div class="banner '+x[0]+'">'+esc(x[1])+'</div>').join("");
 }
 function renderVerdict(){

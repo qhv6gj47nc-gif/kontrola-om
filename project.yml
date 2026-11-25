@@ -21,8 +21,8 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: cz.monter.kontrolaom
-        MARKETING_VERSION: "1.32"
-        CURRENT_PROJECT_VERSION: "34"
+        MARKETING_VERSION: "1.33"
+        CURRENT_PROJECT_VERSION: "35"
         TARGETED_DEVICE_FAMILY: "1"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         GENERATE_INFOPLIST_FILE: YES
