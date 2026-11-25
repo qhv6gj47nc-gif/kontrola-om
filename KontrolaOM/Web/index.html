@@ -53,6 +53,7 @@ header.top .wrap{padding-block:14px 12px;display:flex;flex-direction:column;gap:
 .modes button[aria-pressed="true"]{background:#fff;color:#c23f00;box-shadow:0 1px 3px rgba(0,0,0,.12)}
 
 main{display:flex;flex-direction:column;gap:20px;padding-block:20px}
+h3.grp{font-size:.78rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin:8px 0 -4px;padding-top:12px;border-top:1px solid var(--line)}
 h2{font-family:var(--f-display);font-size:1.25rem;font-weight:700;letter-spacing:-.01em;margin:0;color:var(--fg);text-wrap:balance}
 .card{background:var(--surface);border-radius:var(--r);padding:18px 16px;display:flex;flex-direction:column;gap:14px;box-shadow:var(--shadow)}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
@@ -202,28 +203,12 @@ footer{font-size:.78rem;color:var(--muted);padding-block:4px 24px;text-align:cen
       <p class="hint" id="photo-status" aria-live="polite"></p>
       <div id="photo-res"></div>
     </div>
-    <div class="grid2">
-      <label class="f">EAN / číslo OM<input id="ean" inputmode="numeric" placeholder="859182400…"></label>
-      <label class="f">Adresa<input id="adresa" placeholder="Ulice č.p., obec"></label>
-    </div>
-    <div class="grid2">
-      <div class="f"><label class="f" for="faze-1" style="pointer-events:none">Počet fází</label>
-        <div class="seg" id="faze"><button id="faze-1" data-v="1">1f</button><button id="faze-3" data-v="3">3f</button></div></div>
-      <div class="f"><span class="f" style="font-size:.82rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">Charakteristika HJ</span>
-        <div class="seg" id="char"><button id="char-B" data-v="B">B</button><button id="char-C" data-v="C">C</button><button id="char-D" data-v="D">D</button></div></div>
-    </div>
-    <div class="grid2">
-      <label class="f"><span id="jistic-t">Hlavní jistič před EM (A)</span><input id="jistic" type="number" inputmode="numeric" min="1" step="1"></label>
-    </div>
-    <div class="grid2">
-      <label class="f">Typ objektu<select id="objekt">
-        <option value="rd">Rodinný dům</option><option value="bd">Bytový dům</option><option value="chata">Chata / garáž (kolonie)</option><option value="jine">Jiné (nebytové)</option></select></label>
-      <label class="f">Umístění ER<select id="umisteni">
-        <option value="vnitrni">Vnitřní</option><option value="venkovni">Venkovní</option><option value="komunikace">Venkovní u komunikace</option></select></label>
-    </div>
-    <div class="grid2">
-      <label class="f">Rozváděč vyroben<select id="erRok"><option value="stary">do 31. 12. 2025</option><option value="novy">od 1. 1. 2026</option></select></label>
-      <label class="f">Elektroměr<select id="em"><option value="klasik">Klasický</option><option value="typb">Typ B</option><option value="amm">AMM</option></select></label>
+    <h3 class="grp">Zakázka</h3>
+    <div id="sazba-box" class="grid2" hidden>
+      <label class="f" id="sazbaZ-l">Současná sazba<select id="sazbaZ"></select></label>
+      <label class="f"><span id="sazbaNa-t">Požadovaná sazba</span><select id="sazbaNa"></select></label>
+      <label class="f" id="fzm-l">Změna počtu fází<select id="fzm"><option value="">Beze změny</option><option value="f13">Současně z 1F na 3F</option><option value="f31">Současně z 3F na 1F</option></select></label>
+      <label class="f" id="jzm-l">Změna hlavního jističe<select id="jzm"><option value="">Beze změny</option><option value="zvys">Navýšení hodnoty</option><option value="sniz">Snížení hodnoty</option></select></label>
     </div>
     <div class="grid2">
       <label class="f" id="zasah-l">Typ činnosti (VP_A)<select id="zasah">
@@ -248,11 +233,31 @@ footer{font-size:.78rem;color:var(--muted);padding-block:4px 24px;text-align:cen
       <label class="f">Instalovaný výkon (kW)<input id="vyrKw" type="number" inputmode="decimal" step="0.1"></label>
       <label class="f" id="vyrNav-l">Navýšení výkonu FVE<select id="vyrNav"><option value="ne">Ne</option><option value="ano">Ano</option></select></label>
     </div>
-    <div id="sazba-box" class="grid2" hidden>
-      <label class="f" id="sazbaZ-l">Současná sazba<select id="sazbaZ"></select></label>
-      <label class="f"><span id="sazbaNa-t">Požadovaná sazba</span><select id="sazbaNa"></select></label>
-      <label class="f" id="fzm-l">Změna počtu fází<select id="fzm"><option value="">Beze změny</option><option value="f13">Současně z 1F na 3F</option><option value="f31">Současně z 3F na 1F</option></select></label>
-      <label class="f" id="jzm-l">Změna hlavního jističe<select id="jzm"><option value="">Beze změny</option><option value="zvys">Navýšení hodnoty</option><option value="sniz">Snížení hodnoty</option></select></label>
+    <h3 class="grp">Elektroměr a hlavní jistič</h3>
+    <div class="grid2">
+      <div class="f"><label class="f" for="faze-1" style="pointer-events:none">Počet fází</label>
+        <div class="seg" id="faze"><button id="faze-1" data-v="1">1f</button><button id="faze-3" data-v="3">3f</button></div></div>
+      <div class="f"><span class="f" style="font-size:.82rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">Charakteristika HJ</span>
+        <div class="seg" id="char"><button id="char-B" data-v="B">B</button><button id="char-C" data-v="C">C</button><button id="char-D" data-v="D">D</button></div></div>
+    </div>
+    <div class="grid2">
+      <label class="f"><span id="jistic-t">Hlavní jistič před EM (A)</span><input id="jistic" type="number" inputmode="numeric" min="1" step="1"></label>
+      <label class="f">Elektroměr<select id="em"><option value="klasik">Klasický</option><option value="typb">Typ B</option><option value="amm">AMM</option></select></label>
+    </div>
+    <h3 class="grp">Rozváděč</h3>
+    <div class="grid2">
+      <label class="f">Typ objektu<select id="objekt">
+        <option value="rd">Rodinný dům</option><option value="bd">Bytový dům</option><option value="chata">Chata / garáž (kolonie)</option><option value="jine">Jiné (nebytové)</option></select></label>
+      <label class="f">Umístění ER<select id="umisteni">
+        <option value="vnitrni">Vnitřní</option><option value="venkovni">Venkovní</option><option value="komunikace">Venkovní u komunikace</option></select></label>
+    </div>
+    <div class="grid2">
+      <label class="f">Rozváděč vyroben<select id="erRok"><option value="stary">do 31. 12. 2025</option><option value="novy">od 1. 1. 2026</option></select></label>
+    </div>
+    <h3 class="grp">Označení OM do protokolu</h3>
+    <div class="grid2">
+      <label class="f">EAN / číslo OM<input id="ean" inputmode="numeric" placeholder="859182400…"></label>
+      <label class="f">Adresa<input id="adresa" placeholder="Ulice č.p., obec"></label>
     </div>
     <div id="calc" class="calc" aria-live="polite"></div>
     <div id="banners" style="display:flex;flex-direction:column;gap:8px"></div>
@@ -273,14 +278,16 @@ footer{font-size:.78rem;color:var(--muted);padding-block:4px 24px;text-align:cen
     <p class="hint" id="vsub"></p>
     <ul class="faults" id="faults"></ul>
     <div class="actions">
+      <button class="btn" id="b-resume">Pokračovat v kontrole</button>
       <button class="btn" id="b-copy">Kopírovat protokol</button>
-      <button class="btn ghost" id="b-save">Uložit do historie</button>
-      <button class="btn ghost" id="b-new">Nová kontrola</button>
     </div>
     <div class="actions">
-      <button class="btn ghost" id="b-resume">Projít průvodce</button>
-      <button class="btn ghost" id="b-list">Upravit odpovědi</button>
+      <button class="btn ghost" id="b-list">Všechny body</button>
       <button class="btn ghost" id="b-udaje">Údaje OM</button>
+    </div>
+    <div class="actions">
+      <button class="btn ghost" id="b-save">Uložit do historie</button>
+      <button class="btn ghost" id="b-new">Nová kontrola</button>
     </div>
     <p class="hint" id="copy-msg" aria-live="polite"></p>
     <textarea id="proto" readonly hidden aria-label="Text protokolu"></textarea>
@@ -402,37 +409,37 @@ const SECS=[
   {id:"p1",col:"um",q:"ER je trvale přístupný pracovníkům PDS",ref:"PP nn 3.1"},
   {id:"p2",col:"um",q:"Před ER volný prostor min. 800 mm do hloubky i šířky, rovná plocha",ref:"PP nn 3.1"},
   {id:"p3",col:"um",q:"Dvířka lze otevřít min. o 90°",ref:"PP nn 3.1"},
+  {id:"v4",col:"um",q:"Spodní hrana venkovního ER min. 600 mm nad terénem",when:()=>S.umisteni!=="vnitrni",ref:"PP nn tab. 1"},
   {id:"p5",q:"ER je na hranici pozemku nebo na obvodové zdi, dvířka z veřejně přístupné strany",col:"um",when:()=>S.objekt==="rd",ref:"PP nn 3.1"},
   {id:"p6",q:"ER je na chodbě, podestě nebo v energocentru",col:"um",when:()=>S.objekt==="bd",ref:"PP nn 3.1"},
   {id:"p7",q:"Společný ER u místa připojení, přístupný z veřejného prostranství",col:"um",when:()=>S.objekt==="chata",ref:"PP nn 3.1"},
  ]},
  {id:"konstr",t:"Konstrukce rozváděče",items:[
-  {id:"k1",col:"konstr",q:"Typově zkoušený ER s prohlášením o shodě a značkou CE, zkratová odolnost min. 10 kA",ref:"PP nn 3.2.1"},
-  {id:"k2",col:"konstr",q:"Krytí odpovídá umístění",d:()=>"Otevřené dveře min. IP20. Zavřené: "+({vnitrni:"IP 2XC (vnitřní)",venkovni:"IP 43 (venkovní)",komunikace:"IP 44 (venkovní u komunikace)"})[S.umisteni]+".",ref:"PP nn 3.2.1"},
   {id:"k3",col:"konstr",q:"Přístrojová deska není dřevěná, pertinaxová ani gumonová",d:"Takovou desku je nutné vyměnit.",ref:"PP nn 3.2.1"},
   {id:"k4",col:"maska",q:"V rozváděči je krycí maska (snímatelný kryt), lepené plexisklo nebo fólie",lab:["Ne","Ano"],inv:true,d:"Masky jen u stávajícího společného ER s fakturačním EM nebo u dočasného ER. Okénka min. 160×120 mm (3f) / 100×100 mm (1f).",ref:"PP nn 3.2.1"},
   {id:"k4s",col:"maska",q:"Jde o společný ER pro více elektroměrů, ve kterém jsou některé EM již osazeny?",d:"Pokud ano, maska je tolerována a nebrání montáži EM ani změně sazby. Ostatní podmínky platí.",neutral:true,when:()=>S.ans.k4==="fail"&&!typbTol(),ref:"PP nn 3.2.1"},
   {id:"k4o",col:"maska",q:()=>"Okénka v masce mají dostatečnou velikost: min. "+(S.faze==="3"?"160×120 mm (třífázový EM)":"100×100 mm (jednofázový EM)"),d:"Přes okénko musí jít odečíst displej a ovládat elektroměr.",neutral:true,when:()=>spolEx(),ref:"PP nn 3.2.1"},
   {id:"k7",col:"konstr",q:"Kabelový prostor oddělen pevnou nebo plombovatelnou přepážkou",ref:"PP nn 3.2.2"},
-  {id:"k9",col:"konstr",q:"Více OM v jednom ER: označení a schéma zapojení",when:()=>S.objekt==="bd"||S.objekt==="chata",ref:"PP nn 3.2.1"}
+  {id:"k9",col:"konstr",q:"Více OM v jednom ER: označení a schéma zapojení",when:()=>S.objekt==="bd"||S.objekt==="chata",ref:"PP nn 3.2.1"},
+  {id:"k2",col:"konstr",q:"Krytí odpovídá umístění",d:()=>"Otevřené dveře min. IP20. Zavřené: "+({vnitrni:"IP 2XC (vnitřní)",venkovni:"IP 43 (venkovní)",komunikace:"IP 44 (venkovní u komunikace)"})[S.umisteni]+".",ref:"PP nn 3.2.1"},
+  {id:"k1",col:"konstr",q:"Typově zkoušený ER s prohlášením o shodě a značkou CE, zkratová odolnost min. 10 kA",ref:"PP nn 3.2.1"},
  ]},
  {id:"vysky",t:"Prostor pro přístroje",items:[
-  {id:"v4",col:"um",q:"Spodní hrana venkovního ER min. 600 mm nad terénem",when:()=>S.umisteni!=="vnitrni",ref:"PP nn tab. 1"},
   {id:"v5",col:"konstr",q:()=>"Volný prostor pro elektroměr min. "+(S.faze==="1"&&S.erRok==="stary"?"180×300×160 mm":"200×400×160 mm")+" (š×v×h)",d:()=>S.faze==="1"?"Jednofázový EM: ER do 31. 12. 2025 min. 180×300×160, od 1. 1. 2026 min. 200×400×160.":"Třífázový EM.",ref:"PP nn tab. 2"},
   {id:"v6",col:"konstr",q:"Prostor pro spínací prvek / komunikační jednotku min. 180×300×160 mm",when:()=>S.mode==="montaz"?sp():z1T()&&sp(),ref:"PP nn tab. 2"},
   {id:"v7",col:"konstr",q:"Je osazen jistič pro spínací prvek s dostatečnými parametry",d:"2–6 A, charakteristika B nebo C, vypínací schopnost min. 10 kA, montáž svisle.",when:()=>S.mode==="montaz"?sp():z1T()&&sp(),ref:"PP nn 3.4.1"},
  ]},
  {id:"hj",t:"Hlavní jistič před elektroměrem",items:[
+  {id:"j10",col:"jist",q:"Hodnota jističe odpovídá rezervovanému příkonu ve smlouvě / žádosti",hl:()=>"Zadáno: "+(S.faze==="3"?"3×":"1×")+(S.jistic||"?")+" A, charakteristika "+S.char,ref:"PP nn 1.2, 3.4.1"},
+  {id:"j6",col:"jist",q:()=>S.faze==="3"?"Třífázový elektroměr: hlavní jistič je třífázový (3pólový), póly nelze ovládat samostatně":"Jednofázový elektroměr: hlavní jistič je jednofázový (1pólový)",ref:"PP nn 3.4.1"},
   {id:"j1",q:"Jmenovitý proud v řadě PDS",autoOnly:true,auto:()=>{if(!j())return null;return SER_J.includes(j())?["ok",j()+" A je v normalizované řadě"]:["fail",j()+" A není v řadě "+SER_J.slice(0,11).join(", ")+" …"]},ref:"PP nn 3.4.1"},
   {id:"j2",q:"Jednofázový jistič max. 25 A",autoOnly:true,when:()=>S.faze==="1",auto:()=>{if(!j())return null;return j()<=25?["ok","1f, "+j()+" A ≤ 25 A"]:["fail","1f s jističem "+j()+" A nelze, max. 25 A, nutné 3f připojení"]},ref:"PP nn 3.4.1"},
   {id:"j3",q:"Přímé měření (jistič do 80 A včetně)",autoOnly:true,auto:()=>{if(!j())return null;return j()<=80?["ok","Přímé měření"]:["fail","Nad 80 A nepřímé měření s MTP, řešit dle PP nn 3.6 a schémat 4/5"]},ref:"PP nn 3.5.1"},
   {id:"j4",q:"Charakteristika B",autoOnly:true,auto:()=>S.char==="B"?["ok","Charakteristika B"]:["warn","Charakteristika "+S.char+" jen s kladným stanoviskem PDS"],ref:"PP nn 3.4.1"},
   {id:"j5",col:"jist",q:()=>"Doloženo kladné stanovisko PDS k charakteristice "+S.char,when:()=>S.char!=="B",ref:"PP nn 3.4.1"},
-  {id:"j6",col:"jist",q:()=>S.faze==="3"?"Třífázový elektroměr: hlavní jistič je třífázový (3pólový), póly nelze ovládat samostatně":"Jednofázový elektroměr: hlavní jistič je jednofázový (1pólový)",ref:"PP nn 3.4.1"},
   {id:"j7",col:"jist",q:"Zkratová odolnost min. 10 kA, hodnota, charakteristika a vypínací schopnost zřetelně a nezáměnně označeny",ref:"PP nn 3.4.1"},
   {id:"j8",col:"jist",q:"Jistič bez dálkového ovládání a bez signalizačního kontaktu",ref:"PP nn 3.4.1"},
   {id:"j9",col:"jist",q:"Montáž svisle, páčka nahoru = zapnuto, jistič plombovatelný",ref:"PP nn 3.4.1"},
-  {id:"j10",col:"jist",q:"Hodnota jističe odpovídá rezervovanému příkonu ve smlouvě / žádosti",hl:()=>"Zadáno: "+(S.faze==="3"?"3×":"1×")+(S.jistic||"?")+" A, charakteristika "+S.char,ref:"PP nn 1.2, 3.4.1"}
  ]},
  {id:"vodice",t:"Vodiče a zapojení",items:[
   {id:"w4",col:"vod",q:"Přívodní a vývodní fázové vodiče měřeného OM mají stejný průřez",ref:"PP nn 3.5.2"},
@@ -442,7 +449,7 @@ const SECS=[
  {id:"vyp",t:"Vypínač instalace",when:()=>REQ().konstr,items:[
   {id:"x1",q:"Za elektroměrem je vypínač instalace, který galvanicky odpojí instalaci zákazníka",ref:"PP nn 3.4.3"},
   {id:"x2",q:()=>"Jmenovitý proud vypínače min. "+(j()||"–")+" A (hodnota HJ), označení „Vypínač instalace“",ref:"PP nn 3.4.3"},
-  {id:"x3",q:"Mezi EM a vypínačem není žádný přístroj zákazníka, páčka svisle nahoru = zapnuto",ref:"PP nn 3.4.3"}
+  {id:"x3",q:"Mezi EM a vypínačem není žádný přístroj zákazníka, páčka svisle nahoru = zapnuto",ref:"PP nn 3.4.3"},
  ]},
  {id:"sazba",t:"Tarif, HDO a blokování",when:()=>(two()||S.vyroba==="ano")&&REQ().sch,items:[
   {id:"t0",q:"Nárok na sazbu",autoOnly:true,when:()=>two(),auto:()=>["warn",TAR[S.sazbaNa].cond+" Ověřte v cenovém rozhodnutí ERÚ."],ref:"Cenové rozhodnutí ERÚ"},
@@ -451,14 +458,14 @@ const SECS=[
   {id:"t4",q:"Tarif ani blokování nejsou ovládány ze spínacího prvku v jiném ER",when:()=>sp()||!two(),ref:"PP nn 3.4"},
   {id:"t6",q:"AKU a TUV mají dva samostatné stykače",when:()=>two()&&TAR[S.sazbaNa].blok.includes("AKU"),ref:"VP_B"},
   {id:"t8",q:()=>"Vodiče označeny dle tab. 3 PP nn: TAR"+(two()?", "+TAR[S.sazbaNa].blok.join(", "):"")+(S.vyroba==="ano"?", N 0 %":""),ref:"PP nn tab. 3"},
-  {id:"t9",q:"Výrobna s omezováním výkonu zapojena dle schématu 2 (vodič N 0 %)",when:()=>S.vyroba==="ano",ref:"VP_01 schéma 2"}
+  {id:"t9",q:"Výrobna s omezováním výkonu zapojena dle schématu 2 (vodič N 0 %)",when:()=>S.vyroba==="ano",ref:"VP_01 schéma 2"},
  ]},
  {id:"vyrsec",t:"Výrobna / akumulace",when:()=>S.vyroba==="ano",items:[
   {id:"y1",q:"Režim připojení výrobny",autoOnly:true,auto:()=>{const kw=Number(S.vyrKw);if(!kw)return null;
      return kw<=10.8?["ok","Mikrozdroj ("+kw+" kW), zjednodušené připojení"]:["warn",kw+" kW je nad limit mikrozdroje (10,8 kW), nutná smlouva o připojení dle kap. 4"]},ref:"PP nn 1.2"},
   {id:"y2",q:"Doloženo oznámení / smlouva o připojení výrobny",ref:"PP nn 1.2, kap. 4"},
   {id:"y4",col:"vyp",q:"Na výstupu z ER je doplněn vypínací prvek (OM se stávající výrobnou, přímé zapojení)",ref:"PP nn 3.4.4"},
-  {id:"y3",q:"TOTAL/CENTRAL STOP: mechanický, uzamykatelný, označený vypínač, tlačítka ne na dvířkách ER",rec:true,ref:"PP nn 2.6"}
+  {id:"y3",q:"TOTAL/CENTRAL STOP: mechanický, uzamykatelný, označený vypínač, tlačítka ne na dvířkách ER",rec:true,ref:"PP nn 2.6"},
  ]}
 ];
 
@@ -540,7 +547,6 @@ function renderTop(){
    if(S.mode==="sazba"&&S.fzm==="f31"&&S.faze!=="1")b.push(["warn","Změna na 1F: nastavte nahoře Počet fází na 1f (cílový stav)."]);}
   if(two()&&TAR[S.sazbaNa].nosp)b.push(["info",(S.em==="amm"||S.em==="typb")?"Sazba "+S.sazbaNa+" s elektroměrem "+(S.em==="amm"?"AMM":"typu B")+": spínací prvek (HDO) není nutné osazovat.":"Sazba "+S.sazbaNa+": bez spínacího prvku jen s elektroměrem AMM nebo typu B. S klasickým elektroměrem je nutné osadit HDO."]);
   if(S.mode==="sazba"&&TAR[S.sazbaZ]&&!TAR[S.sazbaZ].two&&two())b.push(["info",sp()?"Přechod z jednotarifu na dvoutarif: je nutný spínací prvek, blokování a dvoutarifový EM.":"Přechod z jednotarifu na dvoutarif: je nutný dvoutarifový EM."]);
-  if(two()&&!sp())b.push(["info","Sazba "+S.sazbaNa+": spínací prvek není nutné osazovat."]);
   $("banners").innerHTML=b.map(x=>'<div class="banner '+x[0]+'">'+esc(x[1])+'</div>').join("");
 }
 function renderVerdict(){
@@ -549,7 +555,8 @@ function renderVerdict(){
   $("vsub").textContent=e.open?("Zbývá vyplnit "+e.open+" povinných bodů z "+e.total+"."):("Zkontrolováno "+e.done+" z "+e.total+" bodů.");
   $("faults").innerHTML=[...e.fails.map(x=>["Závada",x]),...e.warns.map(x=>["Výhrada",x])].map(([k,x])=>'<li><strong>'+k+':</strong> '+esc(val(x.it.q))+(x.m?" – "+esc(x.m):"")+'<span class="ref">'+esc(x.it.ref)+'</span>'+(x.it.autoOnly?'':'<button class="btn ghost" style="min-height:36px;padding:4px 12px;margin-top:4px" data-jump="'+x.it.id+'">Změnit odpověď</button>')+'</li>').join("");
   const p=$("pill"); p.className="pill "+e.v.k; p.textContent=e.v.k==="bad"?"Nepřipraveno":e.v.k==="ok"?"Připraveno":e.v.k==="warn"?"S výhradou":"Rozpracováno";
-  $("stat").textContent=e.done+"/"+e.total+" bodů · "+e.fails.length+" závad · "+e.warns.length+" výhrad";
+  $("stat").textContent=e.done+"/"+e.total+" · "+e.fails.length+" závad"+(e.warns.length?" · "+e.warns.length+" výhrad":"");
+  $("b-resume").hidden=!e.open; $("b-copy").classList.toggle("ghost",!!e.open);
   return e;
 }
 function steps(){const out=[];visibleItems().forEach(({sec,its})=>its.forEach(it=>{if(!it.autoOnly)out.push({sec,it})}));return out;}
