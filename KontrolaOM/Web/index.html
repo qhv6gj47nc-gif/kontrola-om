@@ -294,13 +294,6 @@ footer{font-size:.78rem;color:var(--muted);padding-block:4px 24px;text-align:cen
   </section>
 
   <div id="v-info" style="display:flex;flex-direction:column;gap:18px">
-  <section class="card" aria-labelledby="h-k" id="key-card">
-    <h2 id="h-k">Nastavení rozpoznávání</h2>
-    <p class="hint">Rozbor fotky běží přes Claude (Anthropic) a potřebuje internet a vlastní API klíč. Klíč se uloží bezpečně v klíčence iPhonu.</p>
-    <label class="f">API klíč Anthropic<input id="apikey" type="password" autocomplete="off" placeholder="sk-ant-…"></label>
-    <div class="actions"><button class="btn" id="b-key">Uložit klíč</button><button class="btn ghost" id="b-key-del">Smazat klíč</button></div>
-    <p class="hint" id="key-state"></p>
-  </section>
 
   <section class="card" aria-labelledby="h-h">
     <h2 id="h-h">Historie v tomto zařízení</h2>
@@ -320,6 +313,15 @@ footer{font-size:.78rem;color:var(--muted);padding-block:4px 24px;text-align:cen
       <li><a href="https://www.cezdistribuce.cz/cs/pro-zakazniky/potrebuji-vyresit/ceny-a-podminky/pripojovaci-podminky/pripojovaci-podminky-nn" target="_blank" rel="noopener">Stránka připojovacích podmínek nn</a></li>
     </ul>
     <p class="hint">Pomůcka nenahrazuje PP nn ani cenové rozhodnutí ERÚ. Podmínky nároku na sazbu ověřte v aktuálním cenovém rozhodnutí. Nepřímé měření (nad 80 A), část 3.6–3.9 a kapitola 4 (výrobny) jsou zatím pokryty jen orientačně.</p>
+    </div>
+  </details>
+  <details class="sec docs" id="key-card">
+    <summary><span class="sec-title" id="h-k">Nastavení rozpoznávání</span><svg class="chev" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="2"/></svg></summary>
+    <div class="docs-body">
+    <p class="hint">Rozbor fotky běží přes Claude (Anthropic) a potřebuje internet a vlastní API klíč. Klíč se uloží bezpečně v klíčence iPhonu.</p>
+    <label class="f">API klíč Anthropic<input id="apikey" type="password" autocomplete="off" placeholder="sk-ant-…"></label>
+    <div class="actions"><button class="btn" id="b-key">Uložit klíč</button><button class="btn ghost" id="b-key-del">Smazat klíč</button></div>
+    <p class="hint" id="key-state"></p>
     </div>
   </details>
   </div>
