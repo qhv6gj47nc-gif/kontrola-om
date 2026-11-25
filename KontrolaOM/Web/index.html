@@ -623,16 +623,16 @@ document.addEventListener("click",ev=>{
 function bindValues(){["ean","adresa","jistic","objekt","umisteni","erRok","zasah","vyroba","vyrKw","sazbaZ","sazbaNa","fzm","em"].forEach(id=>{$(id).value=S[id]??"";});}
 
 /* ---------- fotka rozváděče ---------- */
-const LBL={faze:{"1":"1f","3":"3f"},umisteni:{vnitrni:"vnitřní",venkovni:"venkovní"},typ_elektromeru:{elektronicky:"elektronický",indukcni:"indukční (starý)"},
+const LBL={faze:{"1":"1f","3":"3f"},umisteni:{vnitrni:"vnitřní",venkovni:"venkovní"},typ_elektromeru:{elektronicky:"elektronický",indukcni:"indukční (starý)"},druh_em:{klasik:"klasický",typb:"typ B",amm:"AMM"},
   tarif:{jednotarif:"jednotarif",dvoutarif:"dvoutarif"},hdo:{prijimac_osazen:"přijímač HDO osazen",pripravena_pozice:"připravená pozice pro HDO",neni:"bez HDO"}};
 function photoRequest(){
   const items=[];visibleItems().forEach(({sec,its})=>its.forEach(it=>{if(!it.autoOnly)items.push({id:it.id,t:sec.t+": "+val(it.q)})}));
   const str=(e)=>({type:"string",enum:e});
   const schema={type:"object",additionalProperties:false,
-    required:["popis","faze","jistic_a","charakteristika","umisteni","typ_elektromeru","tarif","hdo","polozky"],
+    required:["popis","faze","jistic_a","charakteristika","umisteni","typ_elektromeru","druh_em","tarif","hdo","polozky"],
     properties:{popis:{type:"string"},faze:str(["1","3","nezjisteno"]),jistic_a:{anyOf:[{type:"integer"},{type:"null"}]},
       charakteristika:str(["B","C","D","nezjisteno"]),umisteni:str(["vnitrni","venkovni","nezjisteno"]),
-      typ_elektromeru:str(["elektronicky","indukcni","nezjisteno"]),tarif:str(["jednotarif","dvoutarif","nezjisteno"]),
+      typ_elektromeru:str(["elektronicky","indukcni","nezjisteno"]),druh_em:str(["klasik","typb","amm","nezjisteno"]),tarif:str(["jednotarif","dvoutarif","nezjisteno"]),
       hdo:str(["prijimac_osazen","pripravena_pozice","neni","nezjisteno"]),
       polozky:{type:"array",items:{type:"object",additionalProperties:false,required:["id","odpoved","duvod"],
         properties:{id:str(items.map(x=>x.id)),odpoved:str(["ok","fail"]),duvod:{type:"string"}}}}}};
@@ -644,6 +644,8 @@ function photoRequest(){
     "- Jednopólový jistič vedle hlavního jističe je obvykle jistič spínacího prvku (HDO).",
     "- Elektroměr Meter&Control ST402D s komunikací GPRS/LTE je elektroměr typu B, ne AMM. AMM verze má v typovém označení ST402DAMM.",
     "- Deska na dně ER (často zaplombovaná v rohu) je přepážka, která odděluje kabelový prostor. Pokud je vidět, bod o oddělení kabelového prostoru vyhovuje.",
+    "- Druh elektroměru (druh_em): Meter&Control ST402D a Itron SL7000 jsou typ B (typb). Meter&Control ST402DAMM je AMM (amm). Indukční elektroměr nebo elektronický bez komunikace je klasický (klasik). Když typ neznáš, dej nezjisteno.",
+    "- Průhledný snímatelný kryt (plexi) přes celý vnitřek ER je krycí maska. U bodu k4 pak odpověz fail.",
     "Uváděj jen to, co je na fotce skutečně vidět. Hodnotu jističe uveď jen tehdy, když je potisk čitelný, jinak null. Co nejde poznat, označ jako nezjisteno.",
     "Do pole polozky dávej jen body kontroly, které lze z fotky posoudit s vysokou jistotou (např. materiál desky, snímatelné kryty, krytí podle umístění, upevnění). Rozměry, výšky a průřezy vodičů z fotky neposuzuj.",
     "U položek znamená odpoved ok stav bez závady (vyhovuje PP nn) a fail závadu. Pozor: bod k4 je formulován jako zjištění masky, takže maska, snímatelný kryt, lepené plexisklo nebo fólie = fail.",
@@ -675,7 +677,7 @@ function renderPhoto(){
   if(!r){box.innerHTML="";return;}
   const rows=[];const add=(k,v)=>{if(v&&v!=="nezjisteno")rows.push([k,v])};
   add("Fáze",LBL.faze[r.faze]);add("Hlavní jistič",r.jistic_a?(r.jistic_a+" A"+(r.charakteristika!=="nezjisteno"?", char. "+r.charakteristika:"")):"");
-  add("Umístění",LBL.umisteni[r.umisteni]);add("Elektroměr",LBL.typ_elektromeru[r.typ_elektromeru]);add("Tarif",LBL.tarif[r.tarif]);add("HDO",LBL.hdo[r.hdo]);
+  add("Umístění",LBL.umisteni[r.umisteni]);add("Elektroměr",LBL.typ_elektromeru[r.typ_elektromeru]);add("Druh EM",LBL.druh_em[r.druh_em]);add("Tarif",LBL.tarif[r.tarif]);add("HDO",LBL.hdo[r.hdo]);
   const pol=(r.polozky||[]).filter(p=>steps().some(x=>x.it.id===p.id));
   box.innerHTML='<div class="sug"><strong>Návrh z fotky</strong><p style="margin:0">'+esc(r.popis||"")+'</p>'+
     (rows.length?'<dl>'+rows.map(x=>'<dt>'+esc(x[0])+'</dt><dd>'+esc(x[1])+'</dd>').join("")+'</dl>':'')+
@@ -686,6 +688,7 @@ function applyPhoto(){
   const r=pendingFoto;if(!r)return;
   if(r.faze!=="nezjisteno")S.faze=r.faze;
   if(r.jistic_a)S.jistic=r.jistic_a;
+  if(LBL.druh_em[r.druh_em])S.em=r.druh_em;
   if(r.charakteristika!=="nezjisteno")S.char=r.charakteristika;
   if(r.umisteni==="vnitrni")S.umisteni="vnitrni"; else if(r.umisteni==="venkovni"&&S.umisteni==="vnitrni")S.umisteni="venkovni";
   S.sug=S.sug||{};
